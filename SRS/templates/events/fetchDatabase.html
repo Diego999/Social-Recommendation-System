@@ -1,0 +1,10 @@
+<a href="manage">Back</a>
+{% for key, value in data.items %}
+    <h2>{{ key }}</h2>
+    <ul>
+        {% for v in value %}
+            <li>{{ v }}</li>
+        {% endfor %}
+    </ul>
+
+{%  endfor %}
