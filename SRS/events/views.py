@@ -1,26 +1,32 @@
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
 import functions
 
-def addEvent(request):
+def add_event(request):
     context = {
-        'categories' : functions.getAllCategories()
+        'categories': functions.get_all_categories()
     }
-    return render_to_response('events/addEvent.html', context, context_instance=RequestContext(request))
+    return render_to_response('events/add_event.html', context, context_instance=RequestContext(request))
 
-def fetchDatabase(request):
-    res = functions.fetchAndUpdateDatabase()
+def fetch_database(request):
+    res = functions.fetch__update_database()
     context = {
-        'data': {'Categories Updates':res[0],
-                  'Categories Inserted':res[1],
-                  'Events Updated':res[2],
-                  'Events Inserted':res[3]}
+        'data': {'Categories Updates': res[0],
+                  'Categories Inserted': res[1],
+                  'Events Updated': res[2],
+                  'Events Inserted': res[3]}
     }
-    return render_to_response('events/fetchDatabase.html', context)
+    return render_to_response('events/fetch_database.html', context)
 
-def addEventProcess(request):
-    res = functions.addEventProcess(request.POST)
+def add_event_process(request):
+    request.session['post'] = request.POST
+    return HttpResponseRedirect(reverse('events.views.display_event_added'))
+
+def display_event_added(request):
+    res = functions.add_event_process(request.session.get('post'))
     context = {
         'event' : res.split('\t')
     }
-    return render_to_response('events/addEvent.html', context)
+    return render_to_response('events/add_event.html', context)

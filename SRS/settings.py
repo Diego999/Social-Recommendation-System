@@ -37,7 +37,7 @@ TIME_ZONE = 'America/Chicago'
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
 
-SITE_ID = u'525aa95e6f509c13446f8953'
+SITE_ID = u'525afc136f509c145cb76944'
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -106,11 +106,15 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'SRS.urls'
 
+FACEBOOK_APP_ID = '243857849099325'
+FACEBOOK_SECRET_KEY = '1e209962c6eadb448a5396e72bfca57b'
+FACEBOOK_REDIRECT_URL = 'http://localhost:8000/facebook_login_success'
+
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    'C:/Users/Diego/Desktop/SRS/templates',
+    'C:/Users/Diego/Dropbox/Divers/HES/3eme Annee/Modules/3280 Projet P3 INF/Social Recommendation System/02-Projet/13dlm-ta216/SRS/templates',
 )
 
 INSTALLED_APPS = (
