@@ -8,6 +8,7 @@ from FBGraph.models import User
 def create_urls(begin, end):
     """
     Generate all the available url for the API to fetch the event
+    Return : List with all the urls
     """
     url_template = 'https://www.gokera.ch/api/1.0/events/all_by_date?currentPage=%s&apiKey=000'
 
@@ -19,7 +20,7 @@ def create_urls(begin, end):
 def fetch__update_database():
     """
     Fetch & Update the database.
-    Return a tuple : (categoriesUpdated, categoriesInserted, eventsUpdated, eventsInserted)
+    Return : tuple (categoriesUpdated, categoriesInserted, eventsUpdated, eventsInserted)
     """
     categories_updated = list()
     categories_inserted = list()
@@ -67,13 +68,14 @@ def fetch__update_database():
 def get_all_categories():
     """
     Return all the existing categories in the fetch__update_database
+    Return : List of Category objects
     """
     return Category.objects.all().order_by('name')
 
 def add_event_process(post):
     """
     Add the event past by POST method.
-    Return event's unicode
+    Return : event's unicode
     """
     cat = Category.objects.filter(external_id__exact=post['category'])[0]
     e = Event(category=cat,
@@ -87,7 +89,10 @@ def add_event_process(post):
 
 def get_all_event_sorted(token):
     """
-    Get all the events in a dictionary : Rated and Unrated according to the user
+    Get all the events in a dictionary : Rated and Unrated according to the user. For the rated events, you'll have if the current user likes or dislikes
+    Return : Dictionary {rated, unrated}
+    rated : List[List of Event object, Like or Dislike]
+    unrated : List[List of Event objects]
     """
     current_user = User.objects.filter(external_id__exact=Graph(token).get_me()['id'])[0]
 
@@ -100,6 +105,9 @@ def get_all_event_sorted(token):
             'unrated': unrated_events}
 
 def rate_event_process(external_id, rating, token):
+    """
+    Insert, Update or delete the event
+    """
     if int(rating) == int(RatingValue.NEUTRAL):
         try:
             Rating.objects.filter(event=Event.objects.filter(external_id__exact=external_id)[0])[0].delete()
