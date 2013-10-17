@@ -1,7 +1,9 @@
 import urllib2
 import json
 import re
-from models import Event, Category
+from models import Event, Category, Rating, RatingValue
+from FBGraph.Graph import Graph
+from FBGraph.models import User
 
 def create_urls(begin, end):
     """
@@ -82,3 +84,39 @@ def add_event_process(post):
               )
     e.save()
     return e.__unicode__()
+
+def get_all_event_sorted(token):
+    """
+    Get all the events in a dictionary : Rated and Unrated according to the user
+    """
+    current_user = User.objects.filter(external_id__exact=Graph(token).get_me()['id'])[0]
+
+    rated_events = list()
+    for r in Rating.objects.filter(user=current_user):
+        rated_events.append([Event.objects.filter(id__exact=r.event.id)[0], 'Like' if r.rating == RatingValue.LIKE else 'Dislike'])
+    unrated_events = Event.objects.exclude(id__in=[r[0].id for r in rated_events])
+
+    return {'rated': rated_events,
+            'unrated': unrated_events}
+
+def rate_event_process(external_id, rating, token):
+    if int(rating) == int(RatingValue.NEUTRAL):
+        try:
+            Rating.objects.filter(event=Event.objects.filter(external_id__exact=external_id)[0])[0].delete()
+        except IndexError:
+            #The value doesn't exist, so it's already deleted
+            pass
+    else:
+        e = Event.objects.filter(external_id__exact=external_id)[0]
+        u = User.objects.filter(external_id__exact=Graph(token).get_me()['id'])[0]
+        r = None
+        try:
+            r = Rating.objects.filter(event=e, user=u)[0]
+            #Update
+            r.rating = rating
+        except IndexError:
+            #Insert
+            r = Rating(event=e, user=u, rating=rating)
+        r.save()
+
+

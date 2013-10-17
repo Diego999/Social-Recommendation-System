@@ -8,6 +8,8 @@ class Graph:
     def get_information(self, params):
         out = dict()
         for p in params:
-            out[p] = self.graph.get(path='me/' + p, page=False)['data']
-
+            out[p] = self.graph.get('me/' + p)['data']
         return out
+
+    def get_me(self):
+        return self.graph.get('me')

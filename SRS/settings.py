@@ -37,7 +37,7 @@ TIME_ZONE = 'America/Chicago'
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
 
-SITE_ID = u'525afc136f509c145cb76944'
+SITE_ID = u'525ffdba6f509c0be05a8239'
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
