@@ -1,3 +1,5 @@
+from app_config import *
+
 # Django settings for SRS project.
 
 DEBUG = True
@@ -103,10 +105,6 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'SRS.urls'
-
-FACEBOOK_APP_ID = '243857849099325'
-FACEBOOK_SECRET_KEY = '1e209962c6eadb448a5396e72bfca57b'
-FACEBOOK_REDIRECT_URL = 'http://localhost:8000/facebook_login_success'
 
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
