@@ -10,6 +10,7 @@ class HTMLParserByTag(HTMLParser):
 
     If you've a problem with the accent, try this :
     parser = HTMLParserByTag()
+    parser.initialize(...)
     parser.unescape(urllib2.urlopen("...").read().decode('ascii', 'ignore'))
     """
 
@@ -29,7 +30,7 @@ class HTMLParserByTag(HTMLParser):
 
     def get_data(self):
         """Return all the pasing result."""
-        return ''.join(self.data)
+        return ' '.join(self.data)
 
     def handle_starttag(self, tag, attrs):
         if tag == self.tag or len(self.stack) > 0:
