@@ -1,5 +1,4 @@
 from HTMLParser import HTMLParser
-import urllib2
 import re
 
 class HTMLParserByTag(HTMLParser):
