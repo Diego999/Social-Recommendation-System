@@ -1,10 +1,11 @@
 import treetaggerwrapper
 
+
 class TreeTagger:
     """
     This class allows you to parse a text and the grammar structure of it.
-    An example : tags = TreeTagger().tag_text(..., TreeTagger.noun + TreeTagger.verb)"""
-
+    An example : tags = TreeTagger().tag_text(..., TreeTagger.noun + TreeTagger.verb)
+    """
     abbreviation = 'ABR'
     adjective = 'ADJ'
     adverb = 'ADV'
@@ -32,8 +33,11 @@ class TreeTagger:
                                                    TAGINENC=TreeTagger.tag_in_enc, TAGOUTENC=TreeTagger.tag_out_enc)
 
     def tag_text(self, text, params=[]):
-        """Parse a text with the tags in params. If params is empty, everything will be kept. For more information about the tags,
-        please consult the following link : http://www.ims.uni-stuttgart.de/institut/mitarbeiter/schmid/french-tagset.html."""
+        """
+        Parse a text with the tags in params. If params is empty, everything will be kept.
+        For more information about the tags, please consult the following link :
+        http://www.ims.uni-stuttgart.de/institut/mitarbeiter/schmid/french-tagset.html.
+        """
         tags = self.tagger.TagText(text)
         out = list()
 

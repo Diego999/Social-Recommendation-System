@@ -1,5 +1,6 @@
 from facepy import GraphAPI
 
+
 class Graph:
     def __init__(self, token):
         self.graph = GraphAPI(token)

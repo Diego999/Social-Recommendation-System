@@ -1,8 +1,10 @@
 class Document:
-    """This class represent a document. This document could be a description or text parsing for a website"""
+    """
+    This class represent a document. This document could be a description or text parsing for a website
+    """
 
     def __init__(self, text, id):
-        self.id = id#Usefull to sort the document
+        self.id = id #  Usefull to sort the document
         self.statistics = dict()
         self.add_text(text)
 
@@ -22,11 +24,15 @@ class Document:
         return self.id
 
     def get_statistics(self):
-        """Return a dictionary contains the number of occurrence for all terms"""
+        """
+        Return a dictionary contains the number of occurrence for all terms
+        """
         return self.statistics
 
     def add_text(self, text):
-        """Add the text to the document and update the statistics"""
+        """
+        Add the text to the document and update the statistics
+        """
         words = text.split()
         for w in words:
             if w in self.statistics:
@@ -35,7 +41,9 @@ class Document:
                 self.statistics[w] = 1
 
     def get_tf(self, term):
-        """Compute the tf of a specific term"""
+        """
+        Compute the tf of a specific term
+        """
         if term in self.statistics:
             occurrence = self.statistics[term]
             all_occurrences = 0
@@ -45,8 +53,12 @@ class Document:
         else:
             return 0
 
+
 class Corpus:
-    """Class reprensents a corpus, that contains a set of documents"""
+    """
+    Class represents a corpus, that contains a set of documents
+    """
+
     def __init__(self):
         self.documents = list()
 
@@ -54,7 +66,9 @@ class Corpus:
         return item in self.documents
 
     def add_document(self, document):
-        """Add a document in the corpus"""
+        """
+        Add a document in the corpus
+        """
         self.documents.append(document)
 
     def get_document(self, doc_id):
@@ -64,7 +78,9 @@ class Corpus:
         return None
 
     def get_idf(self, term):
-        """Compute the idf of a specific term in the corpus"""
+        """
+        Compute the idf of a specific term in the corpus
+        """
         import math
 
         number_documents_with_term = 0
@@ -72,11 +88,14 @@ class Corpus:
             if doc.get_tf(term) != 0:
                 number_documents_with_term += 1
 
-        #Mathematically the base of the function log is not important
+        #  Mathematically the base of the function log is not important
         return math.log(len(self.documents), 2)/number_documents_with_term if number_documents_with_term != 0 else 1
 
 class TfIdf:
-    """Class make easier to compute the tf-idf"""
+    """
+    Class make easier to compute the tf-idf
+    """
+
     def __init__(self, corpus, stopwords):
         self.total_number_documents = 0
         self.stopwords = list()
@@ -88,7 +107,8 @@ class TfIdf:
                 self.stopwords.append(l.decode('utf-8'))
 
     def get_tf_idf(self, term, doc_id):
-        """Compute the tf-idf of a term in the document
+        """
+        Compute the tf-idf of a term in the document
         term -> A word
         document -> A document class
         Return : tf-idf
@@ -118,8 +138,10 @@ class TfIdf:
         return out
 
     def get_all_tf_idf_sorted(self, id_doc=0):
-        """Return all the tf-idf computed, by document and inverted-sorted
-        Return : dict(OrderedDict())"""
+        """
+        Return all the tf-idf computed, by document and inverted-sorted
+        Return : dict(OrderedDict())
+        """
         from collections import OrderedDict
         out = OrderedDict()
 

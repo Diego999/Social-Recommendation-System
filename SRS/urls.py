@@ -1,6 +1,7 @@
-from django.conf.urls.defaults import patterns, include, url
+from django.conf.urls.defaults import patterns, url
 
-urlpatterns = patterns('',
+urlpatterns = patterns(
+    '',
     url(r'^$', 'main.views.index', name='index'),
     url(r'^manage/$', 'main.views.manage', name='manage'),
     url(r'^add_event/$', 'events.views.add_event', name='add_event'),

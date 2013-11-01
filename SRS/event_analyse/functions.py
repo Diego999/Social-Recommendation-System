@@ -2,16 +2,19 @@ import urllib2
 from urllib2 import HTTPError, URLError
 from app_config import *
 from html_parser_by_tag import HTMLParserByTag
-from event_analysis import Event_analysis
+from event_analysis import EventAnalysis
 from events.models import Event, Feature, EventFeature
 from tree_tagger import TreeTagger
 
+
 def event_analysis():
+    """
+    Event analysis process. It fetches all the event in the databse and analyse the description & website and
+    then create all the related features
+    """
     events = Event.objects.all()
-
-    event_analysis = Event_analysis()
-
-    websites = dict() # Store all available website and avoid parsing a website several times
+    event_analysis = EventAnalysis()
+    websites = dict()  # Store all available website and avoid parsing a website several times
 
     # We complete the corpus with plain text of description & website if exists
     for e in events:
@@ -23,9 +26,10 @@ def event_analysis():
                 event_analysis.add_document_in_corpus(websites[e.website], e.id, True)
             # Some website :
             # - has a 403 error, eg: complexe3d.com,
-            # - is inexistant website like http://www.biblio.morges.ch
-            # - is not a web url ... like galerie@edouardroch.ch, thhp://www.vitromusee.ch (the typo is on purpose !), www,chateaudeprangins.ch, http://
-            except (HTTPError, URLError, ValueError) as e:
+            # - is nonexistent website like http://www.biblio.morges.ch
+            # - is not a web url ... like galerie@edouardroch.ch,
+            # thhp://www.vitromusee.ch (the typo is on purpose !), www,chateaudeprangins.ch, http://
+            except (HTTPError, URLError, ValueError) as e:  # We must know the other kind of error as conversion problem
                 pass
 
     event_analysis.set_corpus_complete()
@@ -39,7 +43,6 @@ def event_analysis():
         if e.website in websites.keys():
             for k in tagger.tag_text(websites[e.website], FILTER_TREE_TAGGER):
                 event_analysis.compute_tf_idf(k, e.id, True)
-
 
     from collections import OrderedDict
     from itertools import islice
@@ -64,19 +67,24 @@ def event_analysis():
         # and we MUST resort (we use the frequency) the dictionary to keep only the most k important
         key_words = OrderedDict(
             (x[0], x[1][1]) for x in(islice(OrderedDict(sorted(
-                    dict({(k,
+                    dict({(k
+                        ,  # Average frequency
                       ((key_words_description.get(k)[0] if k in key_words_description_keys else 0.0 + key_words_website.get(k)[0] if k in key_words_website_keys else 0.0)
                        /(2.0 if k in key_words_description_keys and k in key_words_website_keys else 1.0)
-                       ,
+                       ,  # Average idf
                        (key_words_description.get(k)[1] if k in key_words_description_keys else 0.0 + key_words_website.get(k)[1] if k in key_words_website_keys else 0.0)
                        /(2.0 if k in key_words_description_keys and k in key_words_website_keys else 1.0))
                      )
+                     #  Finally, we sort inversely the dict by the frequency and we keep the K_MOST_IMPORTANT_KEY values
                      for k in (key_words_description_keys + key_words_website_keys)}).iteritems(), key=lambda x: x[1][0], reverse=True)).items(), 0, K_MOST_IMPORTANT_KEYWORD)))
 
         update_database_event_tags(e, key_words)
 
 
 def event_website_analyse(event):
+    """
+    Parsed the website of an event
+    """
     if event.website == '':
         raise Exception("The event doesn't have any website")
 
@@ -91,7 +99,11 @@ def event_website_analyse(event):
 
     return parsed_text
 
+
 def update_database_event_tags(event, key_words):
+    """
+    Update all the necessary information for a event-features
+    """
     features = Feature.objects.all()
     feature_names = [f.name for f in features]
 
@@ -107,7 +119,11 @@ def update_database_event_tags(event, key_words):
 
             EventFeature(event=event, feature=feature, tf_idf=v).save()
 
+
 def get_list_event_features():
+    """
+    Return the list of all events with related features
+    """
     events = Event.objects.all()
 
     out = dict()
