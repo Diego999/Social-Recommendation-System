@@ -33,7 +33,7 @@ def display_event_added(request):
     return render_to_response('events/add_event.html', context)
 
 def list_events(request):
-    res = functions.get_all_event_sorted(request.session.get('tokenFB'))#To keep the rated first
+    res = functions.get_all_event_sorted(request.session.get('tokenFB'))  # To keep the rated first
     context = {
         'rated_events': res['rated'],
         'unrated_events': res['unrated'],

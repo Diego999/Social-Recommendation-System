@@ -39,7 +39,7 @@ TIME_ZONE = 'America/Chicago'
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
 
-SITE_ID = u'526968d76f509c219cb89f7f'
+SITE_ID = u'5273d6d16f509c0ec03b0636'
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -123,6 +123,7 @@ INSTALLED_APPS = (
     'main',
     'events',
     'event_analyse',
+    'FBGraph',
 )
 
 # A sample logging configuration. The only tangible logging
