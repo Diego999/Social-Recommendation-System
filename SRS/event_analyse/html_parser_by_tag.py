@@ -10,7 +10,7 @@ class HTMLParserByTag(HTMLParser):
 
     If you've a problem with the accent, try this :
     parser = HTMLParserByTag()
-    parser.initialize(...)
+    ...
     parser.unescape(urllib2.urlopen("...").read().decode('ascii', 'ignore'))
     """
 

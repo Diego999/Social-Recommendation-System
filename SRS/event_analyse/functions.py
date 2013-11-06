@@ -89,7 +89,7 @@ def event_website_analyse(event):
         raise Exception("The event doesn't have any website")
 
     parser = HTMLParserByTag()
-    html = parser.unescape(urllib2.urlopen(event.website.encode('utf8')).read().decode('ascii', 'ignore'))
+    html = parser.unescape(urllib2.urlopen(event.website.encode('utf-8')).read().decode('utf-8'))
     parsed_text = ''
 
     for t in FILTER_TAGS_WEBSITE:

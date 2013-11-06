@@ -7,6 +7,13 @@ class EventAnalysis:
     """
     stopwords_file_path = 'data/stopwords/frenchST.txt'
 
+    @staticmethod
+    def get_id_website(id_doc, is_website):
+        """
+        Apply the processing to have a website id
+        """
+        return id_doc if not is_website else id_doc + '_'
+
     def __init__(self):
         self.corpus = Corpus()
         self.is_corpus_complete = False
@@ -52,10 +59,3 @@ class EventAnalysis:
         #Transform OrderedDict(key, tuple(double1, double2)) in OrderedDict(key, double2)
         return OrderedDict((x[0], (x[1][0], x[1][1])) for x in islice(self.tf_idf.get_all_tf_idf_sorted(
             EventAnalysis.get_id_website(id_doc, is_website)).items(), 0, k))
-
-    @staticmethod
-    def get_id_website(id_doc, is_website):
-        """
-        Apply the processing to have a website id
-        """
-        return id_doc if not is_website else id_doc + '_'
