@@ -51,7 +51,7 @@ class Document:
                 all_occurrences += v
             return float(occurrence)/float(all_occurrences)
         else:
-            return 0
+            return 0.0
 
 
 class Corpus:
@@ -81,7 +81,7 @@ class Corpus:
         """
         Compute the idf of a specific term in the corpus
         """
-        import math
+        import numpy
 
         number_documents_with_term = 0
         for doc in self.documents:
@@ -89,7 +89,7 @@ class Corpus:
                 number_documents_with_term += 1
 
         #  Mathematically the base of the function log is not important
-        return math.log(len(self.documents), 2)/number_documents_with_term if number_documents_with_term != 0 else 1
+        return numpy.log10(len(self.documents))/number_documents_with_term if number_documents_with_term != 0 else 1
 
 class TfIdf:
     """
@@ -110,9 +110,11 @@ class TfIdf:
         """
         Compute the tf-idf of a term in the document
         term -> A word
-        document -> A document class
+        document -> A document class. If it contains an underscore, it's considered as a website thus the website weight factor is apply
         Return : tf-idf
         """
+        from app_config import WEIGHT_DESCRIPTION_TEXT, WEIGHT_WEBSITE_TEXT
+
         if doc_id not in self.corpus:
             raise Exception("The document is no in the corpus !")
 
@@ -127,7 +129,7 @@ class TfIdf:
         tf = doc.get_tf(term)
         idf = self.corpus.get_idf(term)
 
-        out = tf*idf
+        out = tf*idf*(WEIGHT_WEBSITE_TEXT if '_' in term else WEIGHT_DESCRIPTION_TEXT)
 
         if doc.get_id() not in self.term_tf_idf.keys():
             self.term_tf_idf[doc.get_id()] = dict()
@@ -154,3 +156,4 @@ class TfIdf:
             out = OrderedDict(sorted(self.term_tf_idf[id_doc].items(), key=lambda x: x[1], reverse=True))
 
         return out
+
