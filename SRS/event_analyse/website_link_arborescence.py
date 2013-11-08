@@ -1,6 +1,8 @@
 from HTMLParser import HTMLParser
 import urlparse
 import urllib2
+from urllib2 import HTTPError, URLError
+from httplib import BadStatusLine
 
 
 class HashTableUrl:
@@ -56,7 +58,7 @@ class HTMLParserLink(HTMLParser):
         self.links = list()
 
     def handle_starttag(self, tag, attrs):
-        if tag == 'a' and len(attrs) > 0 and attrs[0][0] == 'href':
+        if tag == 'a' and len(attrs) > 0 and attrs[0][0] == 'href' and len(attrs[0][1]) > 0:
             link = attrs[0][1]  # href attribute
             parent = self.parent
             parse = urlparse.urlparse(link)
@@ -77,9 +79,12 @@ class HTMLParserLink(HTMLParser):
                 # (didn't know before)
                 link = parent + '/' + link
                 if link[-1] != '/':
-                    response = urllib2.urlopen(link)
-                    mime = response.info()['Content-Type']
-                    link = HTMLParserLink.remove_sharp(response.geturl())
+                    try:
+                        response = urllib2.urlopen(link)
+                        mime = response.info()['Content-Type']
+                        link = HTMLParserLink.remove_sharp(response.geturl())
+                    except (HTTPError, URLError, ValueError) as e:
+                        return
                 parse = urlparse.urlparse(link)
 
             # We keep the link if and only if :
@@ -89,10 +94,13 @@ class HTMLParserLink(HTMLParser):
             if parse.netloc == self.netloc:
                 link = HTMLParserLink.remove_sharp(link)
                 if link not in self.hash_table_urls and link not in self.links:
-                    mime = mime if mime is not None else urllib2.urlopen(link).info()['Content-Type']
-                    if 'text/html' in mime:
-                        self.links.append(link)
-                        self.hash_table_urls.add(link)
+                    try:
+                        mime = mime if mime is not None else urllib2.urlopen(link).info()['Content-Type']
+                        if 'text/html' in mime:
+                            self.links.append(link)
+                            self.hash_table_urls.add(link)
+                    except (HTTPError, URLError, ValueError) as e:
+                        pass
 
     def get_links(self):
         """
@@ -126,7 +134,7 @@ class TreeNode:
                 self.parser.feed(self.parser.unescape(urllib2.urlopen(self.url).read().decode('utf-8')))
                 for link in self.parser.get_links():
                     self.urls.append(TreeNode(link, self.depth-1, self.hash_table_urls))
-            except:
+            except (HTTPError, URLError, ValueError, BadStatusLine) as e:
                 pass
 
     # DEBUG

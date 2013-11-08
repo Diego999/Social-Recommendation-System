@@ -1,11 +1,15 @@
+from tree_tagger import TreeTagger
+
+
 class Document:
     """
     This class represent a document. This document could be a description or text parsing for a website
     """
 
     def __init__(self, text, id):
-        self.id = id #  Usefull to sort the document
+        self.id = id  # Useful to sort the document
         self.statistics = dict()
+        self.tagger = TreeTagger()
         self.add_text(text)
 
     def __eq__(self, other):
@@ -33,7 +37,8 @@ class Document:
         """
         Add the text to the document and update the statistics
         """
-        words = text.split()
+        words = self.tagger.tag_text(text=text, all_tags=True)
+
         for w in words:
             if w in self.statistics:
                 self.statistics[w] += 1
@@ -129,7 +134,7 @@ class TfIdf:
         tf = doc.get_tf(term)
         idf = self.corpus.get_idf(term)
 
-        out = tf*idf*(WEIGHT_WEBSITE_TEXT if '_' in term else WEIGHT_DESCRIPTION_TEXT)
+        out = tf*idf*(WEIGHT_WEBSITE_TEXT if '_' in doc_id else WEIGHT_DESCRIPTION_TEXT)
 
         if doc.get_id() not in self.term_tf_idf.keys():
             self.term_tf_idf[doc.get_id()] = dict()

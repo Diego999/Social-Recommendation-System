@@ -19,13 +19,13 @@ class EventAnalysis:
         self.is_corpus_complete = False
         self.tf_idf = None
 
-    def add_document_in_corpus(self, text, id_doc, is_website):
+    def add_document_in_corpus(self, text, id_doc):
         """
         The id is as follow :
         - A description : Event's id
         - A website : Event's id + "_"
         """
-        self.corpus.add_document(Document(text.lower(), EventAnalysis.get_id_website(id_doc, is_website)))
+        self.corpus.add_document(Document(text, id_doc))
 
     def set_corpus_complete(self):
         """
@@ -34,15 +34,15 @@ class EventAnalysis:
         self.is_corpus_complete = True
         self.tf_idf = TfIdf(self.corpus, EventAnalysis.stopwords_file_path)
 
-    def compute_tf_idf(self, term, id_doc, is_website):
+    def compute_tf_idf(self, term, id_doc):
         """
         The id is as follow :
         - A description : Event's id
         - A website : Event's id + "_"
         """
-        return self.tf_idf.get_tf_idf(term, EventAnalysis.get_id_website(id_doc, is_website))
+        return self.tf_idf.get_tf_idf(term, id_doc)
 
-    def get_tf_idf_the_k_most_important(self, k, id_doc, is_website):
+    def get_tf_idf_the_k_most_important(self, k, id_doc):
         """
         Return a OrderedDict that contains the k most important term (sorted by frequences). If there are
         less terms as k, it returns the number of terms.
@@ -57,5 +57,4 @@ class EventAnalysis:
         from collections import OrderedDict
 
         #Transform OrderedDict(key, tuple(double1, double2)) in OrderedDict(key, double2)
-        return OrderedDict((x[0], (x[1][0], x[1][1])) for x in islice(self.tf_idf.get_all_tf_idf_sorted(
-            EventAnalysis.get_id_website(id_doc, is_website)).items(), 0, k))
+        return OrderedDict((x[0], (x[1][0], x[1][1])) for x in islice(self.tf_idf.get_all_tf_idf_sorted(id_doc).items(), 0, k))

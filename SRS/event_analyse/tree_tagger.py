@@ -32,7 +32,7 @@ class TreeTagger:
         self.tagger = treetaggerwrapper.TreeTagger(TAGLANG=TreeTagger.tag_lang, TAGDIR=TreeTagger.tag_dir,
                                                    TAGINENC=TreeTagger.tag_in_enc, TAGOUTENC=TreeTagger.tag_out_enc)
 
-    def tag_text(self, text, params=[]):
+    def tag_text(self, text, params=[], all_tags=False):
         """
         Parse a text with the tags in params. If params is empty, everything will be kept.
         For more information about the tags, please consult the following link :
@@ -40,11 +40,15 @@ class TreeTagger:
         """
         tags = self.tagger.TagText(text)
         out = list()
+        all_tags_refuse = list(TreeTagger.punctuation) + list(TreeTagger.sentence_tag)
 
         for tag in tags:
             t = tag.split()
-            if len(params) == 0 or t[1] in params:
-                if t[2] != TreeTagger.not_correspondence_found:
-                    out.append(t[2])
+            try:
+                if (all_tags and t[1] not in all_tags_refuse) or (not all_tags and (len(params) == 0 or t[1] in params)):
+                    if t[2] != TreeTagger.not_correspondence_found:
+                        out.append(t[2])
+            except:
+                pass
 
         return out

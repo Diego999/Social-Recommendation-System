@@ -1,10 +1,14 @@
-import urllib2
-from urllib2 import HTTPError, URLError
+import guess_language
 from app_config import *
 from html_parser_by_tag import HTMLParserByTag
 from event_analysis import EventAnalysis
 from events.models import Event, Feature, EventFeature
 from tree_tagger import TreeTagger
+from website_link_arborescence import *
+
+
+def is_nb_word_website_enough(x):
+    return x
 
 
 def event_analysis():
@@ -14,16 +18,32 @@ def event_analysis():
     """
     events = Event.objects.all()
     event_analysis = EventAnalysis()
-    websites = dict()  # Store all available website and avoid parsing a website several times
+    websites = dict(dict())  # Store all available website and avoid parsing a website several times
+
+    #  Contains the list of key-word with tree tagger
+    description_tree_tagger = dict()
+    website_tree_tagger = dict()
+
+    tagger = TreeTagger()
 
     # We complete the corpus with plain text of description & website if exists
     for e in events:
-        if e.description != '':
-            event_analysis.add_document_in_corpus(e.description, e.id, False)
+        if e.description != '' and guess_language.guessLanguage(e.description.encode('utf-8')) == LANGUAGE_FOR_TEXT_ANALYSIS:
+            event_analysis.add_document_in_corpus(e.description, EventAnalysis.get_id_website(e.id, False))
+            description_tree_tagger[EventAnalysis.get_id_website(e.id, False)] = tagger.tag_text(e.description, FILTER_TREE_TAGGER)
+
         if e.website != '':
             try:
-                websites[e.website] = event_website_analyse(e)
-                event_analysis.add_document_in_corpus(websites[e.website], e.id, True)
+                unique_urls = HashTableUrl()
+                TreeNode(e.website.encode('utf-8'), DEFAULT_RECURSION_WEBSITE, unique_urls)
+                websites[e.website] = dict([(w, event_website_analyse(w)) for w in unique_urls.get_urls()])
+                website_tree_tagger[EventAnalysis.get_id_website(e.id, True)] = list()
+                for k, v in websites[e.website].items():
+                    event_analysis.add_document_in_corpus(v, EventAnalysis.get_id_website(e.id, True))
+                    website_tree_tagger[EventAnalysis.get_id_website(e.id, True)] += tagger.tag_text(v, FILTER_TREE_TAGGER)
+                    nb_key_word = len(website_tree_tagger[EventAnalysis.get_id_website(e.id, True)])
+                    if nb_key_word >= is_nb_word_website_enough(nb_key_word):
+                        break
             # Some website :
             # - has a 403 error, eg: complexe3d.com,
             # - is nonexistent website like http://www.biblio.morges.ch
@@ -35,14 +55,14 @@ def event_analysis():
     event_analysis.set_corpus_complete()
 
     # We compute the tf-idf of the key word in the description and in the website if exists
-    tagger = TreeTagger()
+
     for e in events:
         if e.description != '':
-            for k in tagger.tag_text(e.description, FILTER_TREE_TAGGER):
-                event_analysis.compute_tf_idf(k, e.id, False)
+            for k in description_tree_tagger[EventAnalysis.get_id_website(e.id, False)]:
+                event_analysis.compute_tf_idf(k, EventAnalysis.get_id_website(e.id, False))
         if e.website in websites.keys():
-            for k in tagger.tag_text(websites[e.website], FILTER_TREE_TAGGER):
-                event_analysis.compute_tf_idf(k, e.id, True)
+            for k in website_tree_tagger[EventAnalysis.get_id_website(e.id, True)]:
+                event_analysis.compute_tf_idf(k, EventAnalysis.get_id_website(e.id, True))
 
     from collections import OrderedDict
     from itertools import islice
@@ -51,11 +71,11 @@ def event_analysis():
     for e in events:
         key_words_description = OrderedDict()
         if e.description != '':
-            key_words_description = event_analysis.get_tf_idf_the_k_most_important(K_MOST_IMPORTANT_KEYWORD, e.id, False)
+            key_words_description = event_analysis.get_tf_idf_the_k_most_important(K_MOST_IMPORTANT_KEYWORD, EventAnalysis.get_id_website(e.id, False))
 
         key_words_website = OrderedDict()
         if e.website in websites.keys():
-            key_words_website = event_analysis.get_tf_idf_the_k_most_important(K_MOST_IMPORTANT_KEYWORD, e.id, True)
+            key_words_website = event_analysis.get_tf_idf_the_k_most_important(K_MOST_IMPORTANT_KEYWORD, EventAnalysis.get_id_website(e.id, True))
 
         key_words_description_keys = key_words_description.keys()
         key_words_website_keys = key_words_website.keys()
@@ -81,23 +101,23 @@ def event_analysis():
         update_database_event_tags(e, key_words)
 
 
-def event_website_analyse(event):
+def event_website_analyse(url):
     """
     Parsed the website of an event
     """
-    if event.website == '':
+    if url == '':
         raise Exception("The event doesn't have any website")
 
     parser = HTMLParserByTag()
-    html = parser.unescape(urllib2.urlopen(event.website.encode('utf-8')).read().decode('utf-8'))
+    html = parser.unescape(urllib2.urlopen(url.encode('utf-8')).read().decode('utf-8'))
     parsed_text = ''
 
     for t in FILTER_TAGS_WEBSITE:
         parser.initialize(t)
         parser.feed(html)
-        parsed_text += parser.get_data()
+        parsed_text += parser.get_data() + ' '
 
-    return parsed_text
+    return parsed_text if guess_language.guessLanguage(parsed_text.encode('utf-8')) == LANGUAGE_FOR_TEXT_ANALYSIS else ''
 
 
 def update_database_event_tags(event, key_words):
