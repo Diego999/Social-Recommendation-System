@@ -1,4 +1,7 @@
 import guess_language
+import threading
+from job_queue import JobQueue
+from multiprocessing import cpu_count
 from app_config import *
 from html_parser_by_tag import HTMLParserByTag
 from event_analysis import EventAnalysis
@@ -16,14 +19,62 @@ def event_analysis():
     Event analysis process. It fetches all the event in the databse and analyse the description & website and
     then create all the related features
     """
-    events = Event.objects.all()
     event_analysis = EventAnalysis()
-    websites = dict(dict())  # Store all available website and avoid parsing a website several times
+
+    # Store all available website and avoid parsing a website several times
+    websites = dict(dict())
 
     #  Contains the list of key-word with tree tagger
     description_tree_tagger = dict()
     website_tree_tagger = dict()
 
+    nb_core = cpu_count()
+
+    events = Event.objects.all()
+
+    if len(events) == 0:
+        return
+
+    nb_events = len(events)
+    nb_events_thread = nb_events/nb_core
+    events_thread = []
+
+    for i in range(nb_core-1):
+        events_thread.append(events[i*nb_events_thread:(i+1)*nb_events_thread])
+    events_thread.append(events[(nb_core-1)*nb_events_thread:])
+
+    # Fulfill the corpus
+    start_threads(nb_core, event_analysis_fulfill_corpus,
+                  events_thread, event_analysis, websites, description_tree_tagger, website_tree_tagger)
+
+    event_analysis.set_corpus_complete()
+
+    # We compute the tf-idf of the key word in the description and in the website if exists
+    start_threads(nb_core, event_analysis_compute_tf_idf,
+                  events_thread, event_analysis, websites, description_tree_tagger, website_tree_tagger)
+
+    # We fetch the k most important tags by event
+    job_queue = JobQueue()
+    job_queue.start()
+    start_threads(nb_core, event_analysis_fetch_k_most_important_features_and_push_database,
+                  events_thread, job_queue, event_analysis, websites)
+    job_queue.finish()
+
+
+def start_threads(nb_core, fct, tab, *args):
+    threads = []
+    for i in range(nb_core):
+        thread = threading.Thread(target=fct, args=args + (tab[i],))
+        threads.append(thread)
+        thread.start()
+
+    for t in threads:
+        t.join()
+
+def event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tagger, website_tree_tagger, events):
+    """
+    Part 1 of the event analysis, that fulfill the corpus
+    """
     tagger = TreeTagger()
 
     # We complete the corpus with plain text of description & website if exists
@@ -52,10 +103,11 @@ def event_analysis():
             except (HTTPError, URLError, ValueError) as e:  # We must know the other kind of error as conversion problem
                 pass
 
-    event_analysis.set_corpus_complete()
 
-    # We compute the tf-idf of the key word in the description and in the website if exists
-
+def event_analysis_compute_tf_idf(event_analysis, websites, description_tree_tagger, website_tree_tagger, events):
+    """
+    Part 2 of event analysis that compute the tf_idf of each feature in the related document
+    """
     for e in events:
         if e.description != '':
             for k in description_tree_tagger[EventAnalysis.get_id_website(e.id, False)]:
@@ -64,10 +116,14 @@ def event_analysis():
             for k in website_tree_tagger[EventAnalysis.get_id_website(e.id, True)]:
                 event_analysis.compute_tf_idf(k, EventAnalysis.get_id_website(e.id, True))
 
+
+def event_analysis_fetch_k_most_important_features_and_push_database(job_queue, event_analysis, websites, events):
+    """
+    Part 3 of event analysis that fetch the k most important features for an event and push them into the database
+    """
     from collections import OrderedDict
     from itertools import islice
 
-    # We fetch the k most important tags by event
     for e in events:
         key_words_description = OrderedDict()
         if e.description != '':
@@ -81,7 +137,7 @@ def event_analysis():
         key_words_website_keys = key_words_website.keys()
 
         # Input => 2 merges orderedDict as (tag, (frequency, idf))
-        # Output key_words -> OrderdDict(tag, idf), len = K_MOST_IMPORTANT_KEYWORD
+        # Output key_words -> OrderedDict(tag, idf), len = K_MOST_IMPORTANT_KEYWORD
         # Mix key words in description and website to keep the most k important terms.
         # If there is a key in the both dict, we compute the average (frequency + idf)
         # and we MUST resort (we use the frequency) the dictionary to keep only the most k important
@@ -98,7 +154,8 @@ def event_analysis():
                      #  Finally, we sort inversely the dict by the frequency and we keep the K_MOST_IMPORTANT_KEY values
                      for k in (key_words_description_keys + key_words_website_keys)}).iteritems(), key=lambda x: x[1][0], reverse=True)).items(), 0, K_MOST_IMPORTANT_KEYWORD)))
 
-        update_database_event_tags(e, key_words)
+        # Django ORM database is not thread safe, so we have to use a job queue
+        job_queue.put([update_database_event_tags, e, key_words])
 
 
 def event_website_analyse(url):
