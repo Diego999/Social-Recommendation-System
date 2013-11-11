@@ -17,7 +17,8 @@ def facebook_login(request):
 def facebook_login_success(request):
     code = request.GET.get('code')
     facebook = Pyfb(FACEBOOK_APP_ID)
-    request.session['tokenFB'] = facebook.get_access_token(FACEBOOK_SECRET_KEY, code, redirect_uri=FACEBOOK_REDIRECT_URL)
+    request.session['tokenFB'] = facebook.get_access_token(FACEBOOK_SECRET_KEY, code,
+                                                           redirect_uri=FACEBOOK_REDIRECT_URL)
 
     functions.user_process(request.session.get('tokenFB'))
 

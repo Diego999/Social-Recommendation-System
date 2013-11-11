@@ -16,7 +16,7 @@ def is_nb_word_website_enough(x):
 
 def event_analysis():
     """
-    Event analysis process. It fetches all the event in the databse and analyse the description & website and
+    Event analysis process. It fetches all the event in the database and analyse the description & website and
     then create all the related features
     """
     event_analysis = EventAnalysis()
@@ -30,7 +30,7 @@ def event_analysis():
 
     nb_core = cpu_count()
 
-    events = Event.objects.all()
+    events = Event.objects.all()[:20]
 
     if len(events) == 0:
         return
@@ -81,7 +81,8 @@ def event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tag
     for e in events:
         if e.description != '' and guess_language.guessLanguage(e.description.encode('utf-8')) == LANGUAGE_FOR_TEXT_ANALYSIS:
             event_analysis.add_document_in_corpus(e.description, EventAnalysis.get_id_website(e.id, False))
-            description_tree_tagger[EventAnalysis.get_id_website(e.id, False)] = tagger.tag_text(e.description, FILTER_TREE_TAGGER)
+            description_tree_tagger[EventAnalysis.get_id_website(e.id, False)] = tagger.tag_text(e.description,
+                                                                                                 FILTER_TREE_TAGGER)
 
         if e.website != '':
             try:
@@ -91,10 +92,12 @@ def event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tag
                 website_tree_tagger[EventAnalysis.get_id_website(e.id, True)] = list()
                 for k, v in websites[e.website].items():
                     event_analysis.add_document_in_corpus(v, EventAnalysis.get_id_website(e.id, True))
-                    website_tree_tagger[EventAnalysis.get_id_website(e.id, True)] += tagger.tag_text(v, FILTER_TREE_TAGGER)
+                    website_tree_tagger[EventAnalysis.get_id_website(e.id, True)] += tagger.tag_text(v,
+                                                                                                     FILTER_TREE_TAGGER)
                     nb_key_word = len(website_tree_tagger[EventAnalysis.get_id_website(e.id, True)])
                     if nb_key_word >= is_nb_word_website_enough(nb_key_word):
                         break
+
             # Some website :
             # - has a 403 error, eg: complexe3d.com,
             # - is nonexistent website like http://www.biblio.morges.ch
@@ -109,10 +112,11 @@ def event_analysis_compute_tf_idf(event_analysis, websites, description_tree_tag
     Part 2 of event analysis that compute the tf_idf of each feature in the related document
     """
     for e in events:
-        if e.description != '':
+        if e.description != '' and EventAnalysis.get_id_website(e.id, False) in description_tree_tagger.keys():
             for k in description_tree_tagger[EventAnalysis.get_id_website(e.id, False)]:
                 event_analysis.compute_tf_idf(k, EventAnalysis.get_id_website(e.id, False))
-        if e.website in websites.keys():
+
+        if e.website in websites.keys() and EventAnalysis.get_id_website(e.id, True) in website_tree_tagger.keys():
             for k in website_tree_tagger[EventAnalysis.get_id_website(e.id, True)]:
                 event_analysis.compute_tf_idf(k, EventAnalysis.get_id_website(e.id, True))
 
@@ -127,11 +131,13 @@ def event_analysis_fetch_k_most_important_features_and_push_database(job_queue, 
     for e in events:
         key_words_description = OrderedDict()
         if e.description != '':
-            key_words_description = event_analysis.get_tf_idf_the_k_most_important(K_MOST_IMPORTANT_KEYWORD, EventAnalysis.get_id_website(e.id, False))
+            key_words_description = event_analysis.get_tf_idf_the_k_most_important(K_MOST_IMPORTANT_KEYWORD,
+                                                                            EventAnalysis.get_id_website(e.id, False))
 
         key_words_website = OrderedDict()
         if e.website in websites.keys():
-            key_words_website = event_analysis.get_tf_idf_the_k_most_important(K_MOST_IMPORTANT_KEYWORD, EventAnalysis.get_id_website(e.id, True))
+            key_words_website = event_analysis.get_tf_idf_the_k_most_important(K_MOST_IMPORTANT_KEYWORD,
+                                                                               EventAnalysis.get_id_website(e.id, True))
 
         key_words_description_keys = key_words_description.keys()
         key_words_website_keys = key_words_website.keys()
@@ -174,7 +180,7 @@ def event_website_analyse(url):
         parser.feed(html)
         parsed_text += parser.get_data() + ' '
 
-    return parsed_text if guess_language.guessLanguage(parsed_text.encode('utf-8')) == LANGUAGE_FOR_TEXT_ANALYSIS else ''
+    return parsed_text if guess_language.guessLanguage(parsed_text.encode('utf-8')) == LANGUAGE_FOR_TEXT_ANALYSIS else''
 
 
 def update_database_event_tags(event, key_words):

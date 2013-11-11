@@ -42,7 +42,7 @@ def fetch__update_database():
 
     for i in range(nb_core-1):
         urls_thread.append(urls[i*nb_urls_thread:(i+1)*nb_urls_thread])
-    urls_thread.append(urls_thread[(nb_core-1)*nb_urls_thread:])
+    urls_thread.append(urls[(nb_core-1)*nb_urls_thread:])
 
     start_threads(nb_core, update_database, urls_thread, categories_updated, categories_inserted, events_updated,
                   events_inserted)
@@ -69,7 +69,7 @@ def update_database(categories_updated, categories_inserted, events_updated, eve
             cat.save()
 
             event = None
-            description = re.sub('\\n', '', e['description'])
+            description = re.sub('\\n', ' ', e['description'])
             try:
                 event = Event.objects.get(external_id=e['externalId'])
                 if unicode(event.category.external_id) != e['category']['externalId'] \

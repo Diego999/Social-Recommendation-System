@@ -26,10 +26,12 @@ class Event(models.Model):
     website = models.URLField()
     description = models.TextField(max_length=1000)
     users_have_rated = models.ManyToManyField(User, through='Rating')
-    features = models.ManyToManyField('Feature', through='EventFeature')# 'Feature' because the class is declared underneath
+    # 'Feature' because the class is declared underneath
+    features = models.ManyToManyField('Feature', through='EventFeature')
 
     def __unicode__(self):
-        return str(self.external_id) + '\t' + self.category.name + '\t' + self.name + '\t' + self.website + '\t' + self.description
+        return str(self.external_id) + '\t' + self.category.name + '\t' + self.name + '\t' + self.website + '\t' \
+               + self.description
 
     def __hash__(self):
         return self.external_id
@@ -76,4 +78,4 @@ class EventFeature(models.Model):
     tf_idf = models.FloatField()
 
     def __unicode__(self):
-        return self.event + '\t' + self.feature + '\t' + self.tf_idf
+        return self.event.__unicode__() + '\t' + self.feature.__unicode__() + '\t' + str(self.tf_idf)

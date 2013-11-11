@@ -5,7 +5,6 @@ class EventAnalysis:
     """
     Class that contains all the necessary operation to process to a text analysis
     """
-    stopwords_file_path = 'data/stopwords/frenchST.txt'
 
     @staticmethod
     def get_id_website(id_doc, is_website):
@@ -32,7 +31,7 @@ class EventAnalysis:
         Define the corpus as complete to proceed to the next step with tf-idf
         """
         self.is_corpus_complete = True
-        self.tf_idf = TfIdf(self.corpus, EventAnalysis.stopwords_file_path)
+        self.tf_idf = TfIdf(self.corpus)
 
     def compute_tf_idf(self, term, id_doc):
         """

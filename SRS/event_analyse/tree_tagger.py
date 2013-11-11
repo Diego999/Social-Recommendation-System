@@ -20,7 +20,8 @@ class TreeTagger:
     punctuation = 'PUN', 'PUN:cit'
     sentence_tag = 'SENT'
     symbol = 'SYM'
-    verb = 'VER:cond', 'VER:futu', 'VER:impe', 'VER:impf', 'VER:infi', 'VER:pper', 'VER:ppre', 'VER:pres', 'VER:simp', 'VER:subi', 'VER:subp'
+    verb = 'VER:cond', 'VER:futu', 'VER:impe', 'VER:impf', 'VER:infi', 'VER:pper', 'VER:ppre', 'VER:pres', \
+           'VER:simp', 'VER:subi', 'VER:subp'
     not_correspondence_found = '<unknown>'
 
     tag_lang = 'fr'

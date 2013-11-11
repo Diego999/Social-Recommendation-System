@@ -57,9 +57,9 @@ class HTMLParserLink(HTMLParser):
         self.parent = HTMLParserLink.remove_last_slash(self.root_url + HTMLParserLink.clean_path(parse.path))
         self.links = list()
 
-    def handle_starttag(self, tag, attrs):
-        if tag == 'a' and len(attrs) > 0 and attrs[0][0] == 'href' and len(attrs[0][1]) > 0:
-            link = attrs[0][1]  # href attribute
+    def handle_starttag(self, tag, attributes):
+        if tag == 'a' and len(attributes) > 0 and attributes[0][0] == 'href' and len(attributes[0][1]) > 0:
+            link = attributes[0][1]  # href attribute
             parent = self.parent
             parse = urlparse.urlparse(link)
             mime = None
@@ -136,10 +136,3 @@ class TreeNode:
                     self.urls.append(TreeNode(link, self.depth-1, self.hash_table_urls))
             except (HTTPError, URLError, ValueError, BadStatusLine) as e:
                 pass
-
-    # DEBUG
-    """def display(self, prefix=''):
-        for u in self.urls:
-            print prefix + u.url
-            u.display(prefix + TreeNode.prefix_tag)"""
-

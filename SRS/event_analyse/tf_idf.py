@@ -1,10 +1,18 @@
 from tree_tagger import TreeTagger
+from app_config import FRENCH_STOPWORDS_FILE
 
+def load_stopwords():
+    stopwords = list()
+    with open(FRENCH_STOPWORDS_FILE, 'r') as f:
+        for l in f.read().splitlines():
+            stopwords.append(l.decode('utf-8'))
+    return stopwords
 
 class Document:
     """
     This class represent a document. This document could be a description or text parsing for a website
     """
+    stopwords = load_stopwords()
 
     def __init__(self, text, id):
         self.id = id  # Useful to sort the document
@@ -40,10 +48,11 @@ class Document:
         words = self.tagger.tag_text(text=text, all_tags=True)
 
         for w in words:
-            if w in self.statistics:
-                self.statistics[w] += 1
-            else:
-                self.statistics[w] = 1
+            if w not in Document.stopwords:
+                if w in self.statistics:
+                    self.statistics[w] += 1
+                else:
+                    self.statistics[w] = 1
 
     def get_tf(self, term):
         """
@@ -96,20 +105,17 @@ class Corpus:
         #  Mathematically the base of the function log is not important
         return numpy.log10(len(self.documents))/number_documents_with_term if number_documents_with_term != 0 else 1
 
+
 class TfIdf:
     """
     Class make easier to compute the tf-idf
     """
 
-    def __init__(self, corpus, stopwords):
+    def __init__(self, corpus):
         self.total_number_documents = 0
-        self.stopwords = list()
         self.corpus = corpus
         self.term_tf_idf = dict(dict())
 
-        with open(stopwords, 'r') as f:
-            for l in f.read().splitlines():
-                self.stopwords.append(l.decode('utf-8'))
 
     def get_tf_idf(self, term, doc_id):
         """
@@ -123,8 +129,8 @@ class TfIdf:
         if doc_id not in self.corpus:
             raise Exception("The document is no in the corpus !")
 
-        if term in self.stopwords:
-            return 0
+        if term in Document.stopwords:
+            return 0.0
 
         doc = self.corpus.get_document(doc_id)
 
@@ -134,7 +140,7 @@ class TfIdf:
         tf = doc.get_tf(term)
         idf = self.corpus.get_idf(term)
 
-        out = tf*idf*(WEIGHT_WEBSITE_TEXT if '_' in doc_id else WEIGHT_DESCRIPTION_TEXT)
+        out = tf*idf*(WEIGHT_WEBSITE_TEXT if '_' in str(doc_id) else WEIGHT_DESCRIPTION_TEXT)
 
         if doc.get_id() not in self.term_tf_idf.keys():
             self.term_tf_idf[doc.get_id()] = dict()

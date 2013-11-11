@@ -2,6 +2,7 @@ from models import User
 from Graph import Graph
 from django.core.exceptions import ObjectDoesNotExist
 
+
 def user_process(_token):
     """
     Add the user if he's a new facebook user of the application. Otherwise, change the current values
