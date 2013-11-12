@@ -20,6 +20,7 @@ def event_analysis():
     then create all the related features
     """
     event_analysis = EventAnalysis()
+    TreeTagger()  # We initialize the singleton
 
     # Store all available website and avoid parsing a website several times
     websites = dict(dict())
@@ -30,7 +31,7 @@ def event_analysis():
 
     nb_core = cpu_count()
 
-    events = Event.objects.all()[:20]
+    events = Event.objects.all()
 
     if len(events) == 0:
         return
