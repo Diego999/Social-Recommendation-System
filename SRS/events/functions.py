@@ -6,8 +6,6 @@ from FBGraph.Graph import Graph
 from FBGraph.models import User
 from app_config import GOKERA_API
 from django.core.exceptions import ObjectDoesNotExist
-from multiprocessing import cpu_count
-from event_analyse.functions import start_threads
 
 
 def create_urls(begin, end):
@@ -33,28 +31,7 @@ def fetch__update_database():
     events_updated = list()
     events_inserted = list()
 
-    urls = create_urls(1, json.load(urllib2.urlopen(create_urls(1, 1)[0]))['totalPages'])
-
-    nb_core = cpu_count()
-    nb_urls = len(urls)
-    nb_urls_thread = nb_urls/nb_core
-    urls_thread = []
-
-    for i in range(nb_core-1):
-        urls_thread.append(urls[i*nb_urls_thread:(i+1)*nb_urls_thread])
-    urls_thread.append(urls[(nb_core-1)*nb_urls_thread:])
-
-    start_threads(nb_core, update_database, urls_thread, categories_updated, categories_inserted, events_updated,
-                  events_inserted)
-
-    return categories_updated, categories_inserted, events_updated, events_inserted
-
-
-def update_database(categories_updated, categories_inserted, events_updated, events_inserted, urls):
-    """
-    Thread that update the database with a list of urls
-    """
-    for u in urls:
+    for u in create_urls(1, json.load(urllib2.urlopen(create_urls(1, 1)[0]))['totalPages']):
         for e in json.load(urllib2.urlopen(u))['events']:
             cat = None
             try:
@@ -66,7 +43,7 @@ def update_database(categories_updated, categories_inserted, events_updated, eve
             except ObjectDoesNotExist:
                 cat = Category(external_id=e['category']['externalId'], name=e['category']['name'])
                 categories_inserted.append(cat.name)
-            cat.save()
+            cat.save()  # NOT THREAD-SAFE !
 
             event = None
             description = re.sub('\\n', ' ', e['description'])
@@ -94,7 +71,10 @@ def update_database(categories_updated, categories_inserted, events_updated, eve
 
                 events_inserted.append(event.name)
 
-            event.save()
+            event.save()  # NOT THREAD-SAFE !
+
+    return categories_updated, categories_inserted, events_updated, events_inserted
+
 
 
 def get_all_categories():
