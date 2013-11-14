@@ -24,7 +24,7 @@ class EventAnalysis:
         - A description : Event's id
         - A website : Event's id + "_"
         """
-        self.corpus.add_document(Document(text, id_doc))
+        self.corpus.add_document(Document(text.lower(), id_doc))
 
     def set_corpus_complete(self):
         """
@@ -39,7 +39,7 @@ class EventAnalysis:
         - A description : Event's id
         - A website : Event's id + "_"
         """
-        return self.tf_idf.get_tf_idf(term, id_doc)
+        return self.tf_idf.get_tf_idf(term.lower(), id_doc)
 
     def get_tf_idf_the_k_most_important(self, k, id_doc):
         """

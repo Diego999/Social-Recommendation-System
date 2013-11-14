@@ -48,7 +48,7 @@ class TreeTagger:
             http://www.ims.uni-stuttgart.de/institut/mitarbeiter/schmid/french-tagset.html.
             """
             self.lock.acquire()
-            tags = TreeTagger.instance.get_tagger().TagText(text)
+            tags = TreeTagger.instance.get_tagger().TagText(text.lower())
             self.lock.release()
 
             out = list()

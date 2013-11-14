@@ -182,16 +182,20 @@ def event_website_parser(url):
     if url == '':
         raise Exception("The event doesn't have any website")
 
-    parser = HTMLParserByTag()
-    html = parser.unescape(urllib2.urlopen(url.encode('utf-8')).read().decode('utf-8'))
-    parsed_text = ''
+    try:
+        parser = HTMLParserByTag()
+        html = parser.unescape(urllib2.urlopen(url.encode('utf-8')).read().decode('utf-8'))
 
-    for t in FILTER_TAGS_WEBSITE:
-        parser.initialize(t)
-        parser.feed(html)
-        parsed_text += parser.get_data() + ' '
+        parsed_text = ''
 
-    return parsed_text if guess_language.guessLanguage(parsed_text.encode('utf-8')) == LANGUAGE_FOR_TEXT_ANALYSIS else''
+        for t in FILTER_TAGS_WEBSITE:
+            parser.initialize(t)
+            parser.feed(html)
+            parsed_text += parser.get_data() + ' '
+        return parsed_text if guess_language.guessLanguage(parsed_text.encode('utf-8')) == LANGUAGE_FOR_TEXT_ANALYSIS else ''
+    except:
+        return ''
+
 
 
 def update_database_event_tags(event, key_words):
