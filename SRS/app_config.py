@@ -8,12 +8,18 @@ FACEBOOK_REDIRECT_URL = 'http://localhost:8000/facebook_login_success'
 
 FRENCH_STOPWORDS_FILE = 'data/stopwords/frenchST.txt'
 
-K_MOST_IMPORTANT_KEYWORD = 10
+K_MOST_IMPORTANT_KEYWORD = 50
+
 # the Higher, the better
 WEIGHT_DESCRIPTION_TEXT = 1.0
 WEIGHT_WEBSITE_TEXT = 0.5
+WEIGHT_CATEGORY = 1.0
 
-FILTER_TREE_TAGGER = [TreeTagger.noun]
+WEIGHT_CATEGORY_NAME = 'Category'
+WEIGHT_DESCRIPTION_NAME = 'Description'
+WEIGHT_WEBSITE_NAME = 'Website'
+
+FILTER_TREE_TAGGER = [TreeTagger.noun, TreeTagger.proper_name]
 FILTER_TAGS_WEBSITE = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'em', 'b', 'i', 'li']
 
 DEFAULT_RECURSION_WEBSITE = 1  # The depth of the url extractor

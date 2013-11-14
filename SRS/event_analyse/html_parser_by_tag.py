@@ -36,7 +36,7 @@ class HTMLParserByTag(HTMLParser):
         """
         return ' '.join(self.data)
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag, attributes):
         if tag == self.tag or len(self.stack) > 0:
             self.stack.append(tag)
             self.keep_data = tag == self.tag

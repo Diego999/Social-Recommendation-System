@@ -1,12 +1,20 @@
 from tree_tagger import TreeTagger
 from app_config import FRENCH_STOPWORDS_FILE
 
+
+class TypeFeature(object):
+    Description = 1
+    Website = 2
+    Category = 3
+
+
 def load_stopwords():
     stopwords = list()
     with open(FRENCH_STOPWORDS_FILE, 'r') as f:
         for l in f.read().splitlines():
             stopwords.append(l.decode('utf-8'))
     return stopwords
+
 
 class Document:
     """
@@ -140,13 +148,14 @@ class TfIdf:
         tf = doc.get_tf(term)
         idf = self.corpus.get_idf(term)
 
-        out = tf*idf*(WEIGHT_WEBSITE_TEXT if '_' in str(doc_id) else WEIGHT_DESCRIPTION_TEXT)
+        out = tf*idf
+        type = TypeFeature.Website if '_' in str(doc.get_id()) else TypeFeature.Description
 
         if doc.get_id() not in self.term_tf_idf.keys():
             self.term_tf_idf[doc.get_id()] = dict()
-            self.term_tf_idf[doc.get_id()][term] = (tf, out)
+            self.term_tf_idf[doc.get_id()][term] = (tf, out, type)
         else:
-            self.term_tf_idf[doc.get_id()][term] = (tf, out)
+            self.term_tf_idf[doc.get_id()][term] = (tf, out, type)
 
         return out
 

@@ -24,7 +24,7 @@ class EventAnalysis:
         - A description : Event's id
         - A website : Event's id + "_"
         """
-        self.corpus.add_document(Document(text, id_doc))
+        self.corpus.add_document(Document(text.lower(), id_doc))
 
     def set_corpus_complete(self):
         """
@@ -39,7 +39,7 @@ class EventAnalysis:
         - A description : Event's id
         - A website : Event's id + "_"
         """
-        return self.tf_idf.get_tf_idf(term, id_doc)
+        return self.tf_idf.get_tf_idf(term.lower(), id_doc)
 
     def get_tf_idf_the_k_most_important(self, k, id_doc):
         """
@@ -56,4 +56,5 @@ class EventAnalysis:
         from collections import OrderedDict
 
         #Transform OrderedDict(key, tuple(double1, double2)) in OrderedDict(key, double2)
-        return OrderedDict((x[0], (x[1][0], x[1][1])) for x in islice(self.tf_idf.get_all_tf_idf_sorted(id_doc).items(), 0, k))
+        return OrderedDict((x[0], (x[1][0], x[1][1], x[1][2])) for x in
+                           islice(self.tf_idf.get_all_tf_idf_sorted(id_doc).items(), 0, k))

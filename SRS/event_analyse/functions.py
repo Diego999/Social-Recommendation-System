@@ -5,13 +5,14 @@ from multiprocessing import cpu_count
 from app_config import *
 from html_parser_by_tag import HTMLParserByTag
 from event_analysis import EventAnalysis
-from events.models import Event, Feature, EventFeature
+from events.models import Event, Feature, EventFeature, Weight
 from tree_tagger import TreeTagger
 from website_link_arborescence import *
+from tf_idf import TypeFeature
 
 
-def is_nb_word_website_enough(x):
-    return x
+def is_nb_word_website_enough():
+    return K_MOST_IMPORTANT_KEYWORD
 
 
 def event_analysis():
@@ -31,7 +32,7 @@ def event_analysis():
 
     nb_core = cpu_count()
 
-    events = Event.objects.all()
+    events = Event.objects.all()[:20]
 
     if len(events) == 0:
         return
@@ -72,6 +73,7 @@ def start_threads(nb_core, fct, tab, *args):
     for t in threads:
         t.join()
 
+
 def event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tagger, website_tree_tagger, events):
     """
     Part 1 of the event analysis, that fulfill the corpus
@@ -80,24 +82,26 @@ def event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tag
 
     # We complete the corpus with plain text of description & website if exists
     for e in events:
+        len_description = 0
         if e.description != '' and guess_language.guessLanguage(e.description.encode('utf-8')) == LANGUAGE_FOR_TEXT_ANALYSIS:
             event_analysis.add_document_in_corpus(e.description, EventAnalysis.get_id_website(e.id, False))
-            description_tree_tagger[EventAnalysis.get_id_website(e.id, False)] = tagger.tag_text(e.description,
+            description_tree_tagger[e.id] = tagger.tag_text(e.description,
                                                                                                  FILTER_TREE_TAGGER)
+            len_description = len(description_tree_tagger[e.id])
 
-        if e.website != '':
+        if e.website != '' and len_description < is_nb_word_website_enough():
             try:
                 unique_urls = HashTableUrl()
                 TreeNode(e.website.encode('utf-8'), DEFAULT_RECURSION_WEBSITE, unique_urls)
-                websites[e.website] = dict([(w, event_website_analyse(w)) for w in unique_urls.get_urls()])
-                website_tree_tagger[EventAnalysis.get_id_website(e.id, True)] = list()
-                for k, v in websites[e.website].items():
-                    event_analysis.add_document_in_corpus(v, EventAnalysis.get_id_website(e.id, True))
-                    website_tree_tagger[EventAnalysis.get_id_website(e.id, True)] += tagger.tag_text(v,
-                                                                                                     FILTER_TREE_TAGGER)
-                    nb_key_word = len(website_tree_tagger[EventAnalysis.get_id_website(e.id, True)])
-                    if nb_key_word >= is_nb_word_website_enough(nb_key_word):
-                        break
+                websites[e.website] = ''
+                for w in unique_urls.get_urls():
+                    websites[e.website] += event_website_parser(w) + ' '
+
+                event_analysis.add_document_in_corpus(websites[e.website], EventAnalysis.get_id_website(e.id, True))
+                website_tree_tagger[e.id] = \
+                    tagger.tag_text(websites[e.website], FILTER_TREE_TAGGER)
+                #  We empty the buffer, to save memory and because we only need afterwards the url
+                websites[e.website] = ' '
 
             # Some website :
             # - has a 403 error, eg: complexe3d.com,
@@ -113,12 +117,12 @@ def event_analysis_compute_tf_idf(event_analysis, websites, description_tree_tag
     Part 2 of event analysis that compute the tf_idf of each feature in the related document
     """
     for e in events:
-        if e.description != '' and EventAnalysis.get_id_website(e.id, False) in description_tree_tagger.keys():
-            for k in description_tree_tagger[EventAnalysis.get_id_website(e.id, False)]:
+        if e.description != '' and e.id in description_tree_tagger.keys():
+            for k in description_tree_tagger[e.id]:
                 event_analysis.compute_tf_idf(k, EventAnalysis.get_id_website(e.id, False))
 
-        if e.website in websites.keys() and EventAnalysis.get_id_website(e.id, True) in website_tree_tagger.keys():
-            for k in website_tree_tagger[EventAnalysis.get_id_website(e.id, True)]:
+        if e.website in websites.keys() and e.id in website_tree_tagger.keys():
+            for k in website_tree_tagger[e.id]:
                 event_analysis.compute_tf_idf(k, EventAnalysis.get_id_website(e.id, True))
 
 
@@ -139,33 +143,39 @@ def event_analysis_fetch_k_most_important_features_and_push_database(job_queue, 
         if e.website in websites.keys():
             key_words_website = event_analysis.get_tf_idf_the_k_most_important(K_MOST_IMPORTANT_KEYWORD,
                                                                                EventAnalysis.get_id_website(e.id, True))
-
         key_words_description_keys = key_words_description.keys()
         key_words_website_keys = key_words_website.keys()
 
-        # Input => 2 merges orderedDict as (tag, (frequency, idf))
-        # Output key_words -> OrderedDict(tag, idf), len = K_MOST_IMPORTANT_KEYWORD
+        # Input => 2 merges orderedDict as (tag, (frequency, idf, type))
+        # Output key_words -> OrderedDict(tag, idf, type), len = K_MOST_IMPORTANT_KEYWORD
         # Mix key words in description and website to keep the most k important terms.
-        # If there is a key in the both dict, we compute the average (frequency + idf)
+        # If there is a key in the both dict, we take the max
         # and we MUST resort (we use the frequency) the dictionary to keep only the most k important
         key_words = OrderedDict(
-            (x[0], x[1][1]) for x in(islice(OrderedDict(sorted(
-                    dict({(k
-                        ,  # Average frequency
-                      ((key_words_description.get(k)[0] if k in key_words_description_keys else 0.0 + key_words_website.get(k)[0] if k in key_words_website_keys else 0.0)
-                       /(2.0 if k in key_words_description_keys and k in key_words_website_keys else 1.0)
-                       ,  # Average idf
-                       (key_words_description.get(k)[1] if k in key_words_description_keys else 0.0 + key_words_website.get(k)[1] if k in key_words_website_keys else 0.0)
-                       /(2.0 if k in key_words_description_keys and k in key_words_website_keys else 1.0))
+            (x[0], (x[1][1], x[1][2])) for x in(islice(OrderedDict(sorted(
+                    dict({(k,
+                      (max(key_words_description.get(k)[0] if k in key_words_description_keys else 0.0, key_words_website.get(k)[0] if k in key_words_website_keys else 0.0),
+
+                       # If the key exists in description & website, take the tf_idf related with the
+                       key_words_description.get(k)[1] if k in key_words_description_keys and k in key_words_website_keys and key_words_description.get(k)[0] >= key_words_website.get(k)[0]
+                       else
+                       (key_words_website.get(k)[1] if k in key_words_description_keys and k in key_words_website_keys
+                        else (key_words_description.get(k)[1] if k in key_words_description_keys else key_words_website.get(k)[1])),
+
+                        TypeFeature.Description if k in key_words_description_keys and k in key_words_website_keys and key_words_description.get(k)[0] >= key_words_website.get(k)[0]
+                        else
+                        (TypeFeature.Website if k in key_words_description_keys and k in key_words_website_keys
+                         else TypeFeature.Description if k in key_words_description_keys else TypeFeature.Website))
                      )
                      #  Finally, we sort inversely the dict by the frequency and we keep the K_MOST_IMPORTANT_KEY values
-                     for k in (key_words_description_keys + key_words_website_keys)}).iteritems(), key=lambda x: x[1][0], reverse=True)).items(), 0, K_MOST_IMPORTANT_KEYWORD)))
+                     for k in (key_words_description_keys + key_words_website_keys)}).iteritems(), key=lambda x: x[1][0])).items(), 0, K_MOST_IMPORTANT_KEYWORD)))
+
 
         # Django ORM database is not thread safe, so we have to use a job queue
         job_queue.put([update_database_event_tags, e, key_words])
 
 
-def event_website_analyse(url):
+def event_website_parser(url):
     """
     Parsed the website of an event
     """
@@ -188,20 +198,32 @@ def update_database_event_tags(event, key_words):
     """
     Update all the necessary information for a event-features
     """
-    features = Feature.objects.all()
-    feature_names = [f.name for f in features]
-
     for fe in EventFeature.objects.filter(event=event):
         fe.delete()
 
-    epsilon = 10**-10
+    feature_name = [f.name for f in Feature.objects.all()]
     for k, v in key_words.items():
-        if v >= epsilon:
-            # We insert the new feature or fetch it
-            feature = Feature.objects.get(name__exact=k) if k in feature_names else Feature(name=k)
-            feature.save()
+        k = k.strip()
+        # We insert the new feature or fetch it
+        feature = Feature.objects.get(name__exact=k) if k in feature_name else Feature(name=k)
+        feature.save()
 
-            EventFeature(event=event, feature=feature, tf_idf=v).save()
+        weight = Weight.objects.get(
+            name=WEIGHT_DESCRIPTION_NAME if v[1] == TypeFeature.Description else WEIGHT_WEBSITE_NAME)
+
+        EventFeature(event=event, feature=feature, tf_idf=v[0], weight=weight).save()
+
+    if len(EventFeature.objects.filter(event=event, weight=Weight.objects.get(name=WEIGHT_CATEGORY_NAME))) == 0:
+        words = event.category.name.split('/')
+        if len(words) == 3:
+            words = [words[0], words[1]]
+
+        for w in words:
+            w = w.strip().lower()
+            feature = Feature.objects.get(name__exact=w) if w in feature_name else Feature(name=w)
+            feature.save()
+            EventFeature(event=event, feature=feature, tf_idf=1.0,
+                         weight=Weight.objects.get(name=WEIGHT_CATEGORY_NAME)).save()
 
 
 def get_list_event_features():
@@ -212,7 +234,8 @@ def get_list_event_features():
 
     out = dict()
     for e in events:
-        out[e] = [(ef.feature.name, ef.tf_idf) for ef in EventFeature.objects.filter(event__exact=e)]
+        out[e] = [(ef.feature.name, ef.tf_idf*ef.weight.weight, ef.weight.weight, ef.weight.name)
+                  for ef in EventFeature.objects.filter(event__exact=e).order_by('-tf_idf')]
 
     return out
 

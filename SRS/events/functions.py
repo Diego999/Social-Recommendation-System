@@ -1,10 +1,11 @@
 import urllib2
 import json
 import re
-from models import Event, Category, Rating, RatingValue
+from models import Event, Category, Rating, RatingValue, Weight
 from FBGraph.Graph import Graph
 from FBGraph.models import User
-from app_config import GOKERA_API
+from app_config import GOKERA_API, WEIGHT_WEBSITE_TEXT, WEIGHT_DESCRIPTION_TEXT, WEIGHT_CATEGORY, \
+    WEIGHT_CATEGORY_NAME, WEIGHT_DESCRIPTION_NAME, WEIGHT_WEBSITE_NAME
 from django.core.exceptions import ObjectDoesNotExist
 
 
@@ -73,9 +74,15 @@ def fetch__update_database():
 
             event.save()  # NOT THREAD-SAFE !
 
+    update_weight_database()
     return categories_updated, categories_inserted, events_updated, events_inserted
 
 
+def update_weight_database():
+    for k, v in {WEIGHT_CATEGORY_NAME: WEIGHT_CATEGORY,
+                 WEIGHT_DESCRIPTION_NAME: WEIGHT_DESCRIPTION_TEXT,
+                 WEIGHT_WEBSITE_NAME: WEIGHT_WEBSITE_TEXT}.items():
+        Weight(name=k, weight=v).save()
 
 def get_all_categories():
     """

@@ -69,12 +69,24 @@ class Feature(models.Model):
         return self.name
 
 
+class Weight(models.Model):
+    """
+    Weight factor for a feature
+    """
+    weight = models.FloatField()
+    name = models.CharField(max_length=50)
+
+    def __unicode__(self):
+        return str(self.weight)
+
+
 class EventFeature(models.Model):
     """
     Association between an event and a feature
     """
     event = models.ForeignKey(Event)
     feature = models.ForeignKey(Feature)
+    weight = models.ForeignKey(Weight)
     tf_idf = models.FloatField()
 
     def __unicode__(self):
