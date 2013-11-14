@@ -32,7 +32,7 @@ def event_analysis():
 
     nb_core = cpu_count()
 
-    events = Event.objects.all()[:20]
+    events = Event.objects.all()
 
     if len(events) == 0:
         return
@@ -234,8 +234,10 @@ def get_list_event_features():
 
     out = dict()
     for e in events:
-        out[e] = [(ef.feature.name, ef.tf_idf*ef.weight.weight, ef.weight.weight, ef.weight.name)
+        t = [(ef.feature.name, ef.tf_idf*ef.weight.weight, ef.weight.weight, ef.weight.name)
                   for ef in EventFeature.objects.filter(event__exact=e).order_by('-tf_idf')]
+        if len(t) > 0:
+            out[e] = t
 
     return out
 

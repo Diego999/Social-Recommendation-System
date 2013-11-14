@@ -27,8 +27,8 @@ class TreeTagger:
 
     tag_lang = 'fr'
     tag_dir = 'treetagger'
-    tag_in_enc = 'utf-8'
-    tag_out_enc = 'utf-8'
+    tag_in_enc = 'cp1252'
+    tag_out_enc = 'cp1252'
 
     instance = None
 
@@ -48,7 +48,7 @@ class TreeTagger:
             http://www.ims.uni-stuttgart.de/institut/mitarbeiter/schmid/french-tagset.html.
             """
             self.lock.acquire()
-            tags = TreeTagger.instance.get_tagger().TagText(text.lower())
+            tags = TreeTagger.instance.get_tagger().TagText(text)
             self.lock.release()
 
             out = list()
