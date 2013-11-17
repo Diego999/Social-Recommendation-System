@@ -36,28 +36,28 @@ def fetch__update_database():
         for e in json.load(urllib2.urlopen(u))['events']:
             cat = None
             try:
-                cat = Category.objects.get(external_id=e['category']['externalId'])
+                cat = Category.objects.get(external_id=e['category']['objectId'])
 
                 if cat.name != e['category']['name']:
                     cat.name = e['category']['name']
                     categories_updated.append(cat.name)
             except ObjectDoesNotExist:
-                cat = Category(external_id=e['category']['externalId'], name=e['category']['name'])
+                cat = Category(external_id=e['category']['objectId'], name=e['category']['name'])
                 categories_inserted.append(cat.name)
             cat.save()  # NOT THREAD-SAFE !
 
             event = None
             description = re.sub('\\n', ' ', e['description'])
             try:
-                event = Event.objects.get(external_id=e['externalId'])
-                if unicode(event.category.external_id) != e['category']['externalId'] \
-                    or unicode(event.external_id) != e['externalId'] \
+                event = Event.objects.get(external_id=e['objectId'])
+                if unicode(event.category.external_id) != e['category']['objectId'] \
+                    or unicode(event.external_id) != e['objectId'] \
                     or unicode(event.name) != e['name'] \
                     or unicode(event.website) != e['website'] \
                     or unicode(event.description) != description:
 
                     event.category = cat
-                    event.external_id = e['externalId']
+                    event.external_id = e['objectId']
                     event.name = e['name']
                     event.website = e['website']
                     event.description = description
@@ -65,7 +65,7 @@ def fetch__update_database():
 
             except ObjectDoesNotExist:
                 event = Event(category=cat,
-                              external_id=e['externalId'],
+                              external_id=e['objectId'],
                               name=e['name'],
                               website=e['website'],
                               description=description)

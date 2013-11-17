@@ -66,12 +66,12 @@ class HTMLParserLink(HTMLParser):
 
             if parse.scheme == '':
                 # All relative cases
-                if link[0] == '.' and link[1] == '.' and link[2] == '/':
+                if len(link) >= 3 and link[0] == '.' and link[1] == '.' and link[2] == '/':
                     parent = HTMLParserLink.clean_path(self.parent)
                     link = link[3:]
-                elif link[0] == '.' and link[1] == '/':
+                elif len(link) >= 2 and link[0] == '.' and link[1] == '/':
                     link = link[2:]
-                elif link[0] == '/':
+                elif len(link) >= 1 and link[0] == '/':
                     parent = self.root_url
                     link = link[1:]
 

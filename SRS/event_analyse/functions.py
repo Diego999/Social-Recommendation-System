@@ -32,7 +32,7 @@ def event_analysis():
 
     nb_core = cpu_count()
 
-    events = Event.objects.all()
+    events = Event.objects.all()[:20]
 
     if len(events) == 0:
         return
