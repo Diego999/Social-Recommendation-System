@@ -9,9 +9,10 @@ from events.models import Event, Feature, EventFeature, Weight
 from tree_tagger import TreeTagger
 from website_link_arborescence import *
 from tf_idf import TypeFeature
+from django.core.validators import URLValidator
 
 
-def is_nb_word_website_enough():
+def is_nb_word_website_enough(x):
     return K_MOST_IMPORTANT_KEYWORD
 
 
@@ -32,7 +33,7 @@ def event_analysis():
 
     nb_core = cpu_count()
 
-    events = Event.objects.all()[:20]
+    events = Event.objects.all()
 
     if len(events) == 0:
         return
@@ -62,8 +63,56 @@ def event_analysis():
                   events_thread, job_queue, event_analysis, websites)
     job_queue.finish()
 
+    compute_statistics(events, description_tree_tagger, website_tree_tagger)
+
+
+def compute_statistics(events, description_tree_tagger, website_tree_tagger):
+    """
+    Compute usefull statistics
+    """
+    nb_event = len(events)
+    avg_nb_keyword_description = 0
+    avg_nb_keyword_description_website = 0
+    nb_description_fr = float(len(description_tree_tagger))/float(len(events))
+
+    sum = 0
+    for k, v in description_tree_tagger.items():
+        sum += len(v)
+    avg_nb_keyword_description = float(sum)/float(len(events))
+
+    sum = 0
+    for k, v in description_tree_tagger.items():
+        sum += len(v)
+        if k in website_tree_tagger.keys():
+            sum += len(website_tree_tagger[k])
+    avg_nb_keyword_description_website = float(sum)/float(len(events))
+
+    validator = URLValidator(verify_exists=True)
+    nb_events_with_valid_website = 0
+    for e in events:
+        if e.website != '':
+            try:
+                validator(e.website)
+                nb_events_with_valid_website += 1
+            except:
+                pass
+    nb_website_with_keyword = 0
+    for v in website_tree_tagger.values():
+        if len(v) > 0:
+            nb_website_with_keyword += 1
+    nb_website_fr = float(nb_website_with_keyword)/float(nb_events_with_valid_website)
+
+    print 'Number of events : ', nb_event
+    print 'Average number of keywords in description : ', avg_nb_keyword_description
+    print 'Average number of keywords in description + website (rec :', DEFAULT_RECURSION_WEBSITE, ') : ', avg_nb_keyword_description_website
+    print '% descriptions in french : ', nb_description_fr*100.0, ' %'
+    print '% websites in french when the description is in french too : ', nb_website_fr*100.0, ' %'
+
 
 def start_threads(nb_core, fct, tab, *args):
+    """
+    Starts as many thread as number of cores of the machine
+    """
     threads = []
     for i in range(nb_core):
         thread = threading.Thread(target=fct, args=args + (tab[i],))
@@ -85,11 +134,10 @@ def event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tag
         len_description = 0
         if e.description != '' and guess_language.guessLanguage(e.description.encode('utf-8')) == LANGUAGE_FOR_TEXT_ANALYSIS:
             event_analysis.add_document_in_corpus(e.description, EventAnalysis.get_id_website(e.id, False))
-            description_tree_tagger[e.id] = tagger.tag_text(e.description,
-                                                                                                 FILTER_TREE_TAGGER)
+            description_tree_tagger[e.id] = tagger.tag_text(e.description, FILTER_TREE_TAGGER)
             len_description = len(description_tree_tagger[e.id])
 
-        if e.website != '' and len_description < is_nb_word_website_enough():
+        if e.website != '' and len_description < is_nb_word_website_enough(len_description):
             try:
                 unique_urls = HashTableUrl()
                 TreeNode(e.website.encode('utf-8'), DEFAULT_RECURSION_WEBSITE, unique_urls)
@@ -98,9 +146,8 @@ def event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tag
                     websites[e.website] += event_website_parser(w) + ' '
 
                 event_analysis.add_document_in_corpus(websites[e.website], EventAnalysis.get_id_website(e.id, True))
-                website_tree_tagger[e.id] = \
-                    tagger.tag_text(websites[e.website], FILTER_TREE_TAGGER)
-                #  We empty the buffer, to save memory and because we only need afterwards the url
+                website_tree_tagger[e.id] = tagger.tag_text(websites[e.website], FILTER_TREE_TAGGER)
+                #  We empty the buffer, to save memory and because we only need it afterwards the url
                 websites[e.website] = ' '
 
             # Some website :
@@ -197,7 +244,6 @@ def event_website_parser(url):
         return ''
 
 
-
 def update_database_event_tags(event, key_words):
     """
     Update all the necessary information for a event-features
@@ -238,10 +284,7 @@ def get_list_event_features():
 
     out = dict()
     for e in events:
-        t = [(ef.feature.name, ef.tf_idf*ef.weight.weight, ef.weight.weight, ef.weight.name)
+        out[e] = [(ef.feature.name, ef.tf_idf*ef.weight.weight, ef.weight.weight, ef.weight.name)
                   for ef in EventFeature.objects.filter(event__exact=e).order_by('-tf_idf')]
-        if len(t) > 0:
-            out[e] = t
-
     return out
 

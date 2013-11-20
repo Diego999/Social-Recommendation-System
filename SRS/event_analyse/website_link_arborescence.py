@@ -83,7 +83,7 @@ class HTMLParserLink(HTMLParser):
                         response = urllib2.urlopen(link)
                         mime = response.info()['Content-Type']
                         link = HTMLParserLink.remove_sharp(response.geturl())
-                    except (HTTPError, URLError, ValueError) as e:
+                    except:
                         return
                 parse = urlparse.urlparse(link)
 
@@ -134,5 +134,5 @@ class TreeNode:
                 self.parser.feed(self.parser.unescape(urllib2.urlopen(self.url).read().decode('utf-8')))
                 for link in self.parser.get_links():
                     self.urls.append(TreeNode(link, self.depth-1, self.hash_table_urls))
-            except (HTTPError, URLError, ValueError, BadStatusLine) as e:
+            except:
                 pass
