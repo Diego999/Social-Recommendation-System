@@ -21,10 +21,10 @@ class FBUser:
 
     def __init__(self, uid, name, interests):
         self.uid = uid
-        self.name = name.encode('utf-8')
+        self.name = name
         self.interests = [] if len(interests) == 0 else interests.split(',')
         for i in range(0, len(self.interests)):
-            self.interests[i] = self.interests[i].encode('utf-8')
+            self.interests[i] = self.interests[i]
         self.groups = []
         self.pages = []
         self.posts = []
@@ -107,7 +107,7 @@ class Group:
 
     def __init__(self, name, description):
         self.name = name
-        self.description = description.replace('\n', ' ').replace('\\', ' ').replace('/', ' ').encode('utf-8')
+        self.description = description.replace('\n', ' ').replace('\\', ' ').replace('/', ' ')
 
     def __unicode__(self):
         return self.name + '\t' + self.description
@@ -126,7 +126,7 @@ class Page:
 
     def __init__(self, name, description):
         self.name = name
-        self.description = description.replace('\n', ' ').replace('\\', ' ').replace('/', ' ').encode('utf-8')
+        self.description = description.replace('\n', ' ').replace('\\', ' ').replace('/', ' ')
 
     def __unicode__(self):
         return self.name + '\t' + self.description
@@ -144,7 +144,7 @@ class Post:
     """
 
     def __init__(self, message, created_time):
-        self.message = message.replace('\n', ' ').replace('\\', ' ').replace('/', ' ').encode('utf-8')
+        self.message = message.replace('\n', ' ').replace('\\', ' ').replace('/', ' ')
         self.created_time = created_time
 
     def __unicode__(self):

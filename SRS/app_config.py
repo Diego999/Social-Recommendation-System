@@ -9,7 +9,7 @@ FACEBOOK_REDIRECT_URL = 'http://localhost:8000/facebook_login_success'
 FRENCH_STOPWORDS_FILE = 'data/stopwords/frenchST.txt'
 
 K_MOST_IMPORTANT_KEYWORD = 50
-K_MOST_ACTIVE_FB_USER = 10
+K_MOST_ACTIVE_FB_USER = 5
 
 # the Higher, the better
 WEIGHT_DESCRIPTION_TEXT = 1.0
