@@ -69,6 +69,18 @@ class Feature(models.Model):
         return self.name
 
 
+class FeatureUser(models.Model):
+    """
+    Represents the relation between a user and a feature
+    """
+    feature = models.ForeignKey(Feature)
+    user = models.ForeignKey(User)
+    weight = models.FloatField()
+
+    def __unicode__(self):
+        return self.user.__unicode__() + '\t' + self.feature.__unicode__() + '\t' + self.weight
+
+
 class Weight(models.Model):
     """
     Weight factor for a feature

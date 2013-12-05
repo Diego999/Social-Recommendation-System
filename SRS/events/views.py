@@ -32,7 +32,7 @@ def add_event_process(request):
 def display_event_added(request):
     res = functions.add_event_process(request.session.get('post'))
     context = {
-        'event' : res.split('\t')
+        'event': res.split('\t')
     }
     return render_to_response('events/add_event.html', context)
 
