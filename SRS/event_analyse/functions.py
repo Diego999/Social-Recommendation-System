@@ -31,13 +31,13 @@ def event_analysis():
     description_tree_tagger = dict()
     website_tree_tagger = dict()
 
-    nb_core = cpu_count()
-
     events = Event.objects.all()
 
     if len(events) == 0:
         return
 
+    """
+    nb_core = cpu_count()
     nb_events = len(events)
     nb_events_thread = nb_events/nb_core
     events_thread = []
@@ -45,30 +45,40 @@ def event_analysis():
     for i in range(nb_core-1):
         events_thread.append(events[i*nb_events_thread:(i+1)*nb_events_thread])
     events_thread.append(events[(nb_core-1)*nb_events_thread:])
+    """
 
     # Fulfill the corpus
+    """
     start_threads(nb_core, event_analysis_fulfill_corpus,
                   events_thread, event_analysis, websites, description_tree_tagger, website_tree_tagger)
+                  """
+    event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tagger, website_tree_tagger, events)
 
     event_analysis.set_corpus_complete()
 
     # We compute the tf-idf of the key word in the description and in the website if exists
+    """
     start_threads(nb_core, event_analysis_compute_tf_idf,
                   events_thread, event_analysis, websites, description_tree_tagger, website_tree_tagger)
+                  """
+    event_analysis_compute_tf_idf(event_analysis, websites, description_tree_tagger, website_tree_tagger, events)
 
     # We fetch the k most important tags by event
+    """
     job_queue = JobQueue()
     job_queue.start()
     start_threads(nb_core, event_analysis_fetch_k_most_important_features_and_push_database,
                   events_thread, job_queue, event_analysis, websites)
     job_queue.finish()
+    """
+    event_analysis_fetch_k_most_important_features_and_push_database(None, event_analysis, websites, events)
 
     compute_statistics(events, description_tree_tagger, website_tree_tagger)
 
 
 def compute_statistics(events, description_tree_tagger, website_tree_tagger):
     """
-    Compute usefull statistics
+    Compute useful statistics
     """
     nb_event = len(events)
     avg_nb_keyword_description = 0
@@ -127,14 +137,13 @@ def event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tag
     """
     Part 1 of the event analysis, that fulfill the corpus
     """
-    tagger = TreeTagger()
 
     # We complete the corpus with plain text of description & website if exists
     for e in events:
         len_description = 0
         if e.description != '' and guess_language.guessLanguage(e.description.encode('utf-8')) == LANGUAGE_FOR_TEXT_ANALYSIS:
             event_analysis.add_document_in_corpus(e.description, EventAnalysis.get_id_website(e.id, False))
-            description_tree_tagger[e.id] = tagger.tag_text(e.description, FILTER_TREE_TAGGER)
+            description_tree_tagger[e.id] = TreeTagger.tag_text(e.description, FILTER_TREE_TAGGER)
             len_description = len(description_tree_tagger[e.id])
 
         if e.website != '' and len_description < is_nb_word_website_enough(len_description):
@@ -146,7 +155,7 @@ def event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tag
                     websites[e.website] += event_website_parser(w) + ' '
 
                 event_analysis.add_document_in_corpus(websites[e.website], EventAnalysis.get_id_website(e.id, True))
-                website_tree_tagger[e.id] = tagger.tag_text(websites[e.website], FILTER_TREE_TAGGER)
+                website_tree_tagger[e.id] = TreeTagger.tag_text(websites[e.website], FILTER_TREE_TAGGER)
                 #  We empty the buffer, to save memory and because we only need it afterwards the url
                 websites[e.website] = ' '
 
@@ -219,7 +228,8 @@ def event_analysis_fetch_k_most_important_features_and_push_database(job_queue, 
 
 
         # Django ORM database is not thread safe, so we have to use a job queue
-        job_queue.put([update_database_event_tags, e, key_words])
+        #job_queue.put([update_database_event_tags, e, key_words])
+        update_database_event_tags(e, key_words)
 
 
 def event_website_parser(url):
@@ -258,12 +268,14 @@ def update_database_event_tags(event, key_words):
         feature = Feature.objects.get(name__exact=k) if k in feature_name else Feature(name=k)
         feature.save()
 
-        weight = Weight.objects.get(
-            name=WEIGHT_DESCRIPTION_NAME if v[1] == TypeFeature.Description else WEIGHT_WEBSITE_NAME)
+        EventFeature(event=event,
+                     feature=feature,
+                     tf_idf=v[0],
+                     weight=Weight.objects.get(name__exact=WEIGHT_DESCRIPTION_NAME if v[1] == TypeFeature.Description else WEIGHT_WEBSITE_NAME)
+                     ).save()
 
-        EventFeature(event=event, feature=feature, tf_idf=v[0], weight=weight).save()
-
-    if len(EventFeature.objects.filter(event=event, weight=Weight.objects.get(name=WEIGHT_CATEGORY_NAME))) == 0:
+    weight = Weight.objects.get(name__exact=WEIGHT_CATEGORY_NAME)
+    if len(EventFeature.objects.filter(event=event, weight=weight)) == 0:
         words = event.category.name.split('/')
         if len(words) == 3:
             words = [words[0], words[1]]
@@ -272,8 +284,12 @@ def update_database_event_tags(event, key_words):
             w = w.strip().lower()
             feature = Feature.objects.get(name__exact=w) if w in feature_name else Feature(name=w)
             feature.save()
-            EventFeature(event=event, feature=feature, tf_idf=1.0,
-                         weight=Weight.objects.get(name=WEIGHT_CATEGORY_NAME)).save()
+
+            EventFeature(event=event,
+                         feature=feature,
+                         tf_idf=WEIGHT_CATEGORY,
+                         weight=weight
+                         ).save()
 
 
 def get_list_event_features():

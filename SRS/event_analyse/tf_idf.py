@@ -124,7 +124,6 @@ class TfIdf:
         self.corpus = corpus
         self.term_tf_idf = dict(dict())
 
-
     def get_tf_idf(self, term, doc_id):
         """
         Compute the tf-idf of a term in the document
@@ -132,7 +131,6 @@ class TfIdf:
         document -> A document class. If it contains an underscore, it's considered as a website thus the website weight factor is apply
         Return : tf-idf
         """
-        from app_config import WEIGHT_DESCRIPTION_TEXT, WEIGHT_WEBSITE_TEXT
 
         if doc_id not in self.corpus:
             raise Exception("The document is no in the corpus !")

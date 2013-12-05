@@ -69,7 +69,8 @@ class TreeTagger:
         if TreeTagger.instance is None:
             TreeTagger.instance = TreeTagger.Singleton()
 
-    def tag_text(self, text, params=[], all_tags=False):
+    @staticmethod
+    def tag_text(text, params=[], all_tags=False):
         return TreeTagger.instance.tag_text(text, params, all_tags)
 
 

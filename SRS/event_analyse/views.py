@@ -11,5 +11,4 @@ def list_event_features(request):
 
 def event_analysis(request):
     functions.event_analysis()
-    context = {}
-    return list_event_features(context)
+    return list_event_features(request)

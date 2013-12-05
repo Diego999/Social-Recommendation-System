@@ -3,7 +3,8 @@ import re
 
 
 class HTMLParserByTag(HTMLParser):
-    """This class allows you to catch any unique element in a HTML document.
+    """
+    This class allows you to catch any unique element in a HTML document.
     For example,if you have the following document : <p>123<span>456</span>789</p> and you want to fetch all p elements,
     you'll have the following result : 123789.
     When you've created an object, don't forger to initialize it before feeding it !
