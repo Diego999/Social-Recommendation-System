@@ -1,16 +1,8 @@
 <a href="/manage">Back</a>
-{% for key, values in info.items %}
-    <h2>{{ key}}</h2>
-    <ul>
-        {% for v in values %}
-            <li>{{ v }}</li>
-            <ul>
-            {% for kk, vv in v.items %}
-                <li><b>{{ kk }}</b> : {{ vv }}</li>
-            {% endfor %}
-            </ul>
-        {% endfor %}
-    </ul>
+<h2>Features for current User</h2>
+<ul>
+{% for i in info %}
+    <li><b>{{ i.0 }}</b> : <i>{{ i.1 }}</i></li>
 {% endfor %}
-
+</ul>
 <a href="/manage">Back</a>
