@@ -67,11 +67,11 @@ def search_and_extract_key_words(user):
     """
     features = [f.name for f in Feature.objects.all()]
     f_features = []
-
+    tagger = TreeTagger()
     for g in user.get_groups():
-        f_features += extract_key_words([g.get_name(), g.get_description()])
+        f_features += extract_key_words(tagger, [g.get_name(), g.get_description()])
     for p in user.get_pages():
-        f_features += extract_key_words([p.get_name(), p.get_description()])
+        f_features += extract_key_words(tagger, [p.get_name(), p.get_description()])
 
     keyword_in_both_features = []
     for f in f_features:
@@ -83,17 +83,13 @@ def search_and_extract_key_words(user):
     return keyword_in_both_features if len(keyword_in_both_features) > 0 else None
 
 
-def extract_key_words(texts):
+def extract_key_words(tagger, texts):
     """
     Extract keywords in texts and add them uniquely in f_features
     """
-    TreeTagger()  # We initialize the singleton
     list_tags = []
     for t in texts:
-        try:
-            list_tags += TreeTagger.tag_text(t, FILTER_TREE_TAGGER)
-        except:
-            print t
+        list_tags += tagger.tag_text(t, FILTER_TREE_TAGGER)
 
     features = []
     for t in list_tags:

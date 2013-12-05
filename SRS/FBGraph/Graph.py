@@ -63,7 +63,7 @@ class Graph:
                 self.friends[i].add_group(Group(g[u'name'], g[u'description']))
 
     def init_friends(self):
-        for l in Graph.fetch_user_information(self.graph, False)[:3]:
+        for l in Graph.fetch_user_information(self.graph, False):
                     self.friends.append(FBUser(l[u'uid'], l[u'name'], l[u'interests']))
 
     def init_me(self):

@@ -25,7 +25,6 @@ class Document:
     def __init__(self, text, id):
         self.id = id  # Useful to sort the document
         self.statistics = dict()
-        self.tagger = TreeTagger()
         self.add_text(text)
 
     def __eq__(self, other):
@@ -53,7 +52,7 @@ class Document:
         """
         Add the text to the document and update the statistics
         """
-        words = self.tagger.tag_text(text=text, all_tags=True)
+        words = TreeTagger().tag_text(text=text, all_tags=True)
 
         for w in words:
             if w not in Document.stopwords:

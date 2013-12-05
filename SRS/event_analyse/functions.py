@@ -22,7 +22,6 @@ def event_analysis():
     then create all the related features
     """
     event_analysis = EventAnalysis()
-    TreeTagger()  # We initialize the singleton
 
     # Store all available website and avoid parsing a website several times
     websites = dict(dict())
@@ -36,7 +35,6 @@ def event_analysis():
     if len(events) == 0:
         return
 
-    """
     nb_core = cpu_count()
     nb_events = len(events)
     nb_events_thread = nb_events/nb_core
@@ -45,33 +43,29 @@ def event_analysis():
     for i in range(nb_core-1):
         events_thread.append(events[i*nb_events_thread:(i+1)*nb_events_thread])
     events_thread.append(events[(nb_core-1)*nb_events_thread:])
-    """
 
     # Fulfill the corpus
-    """
     start_threads(nb_core, event_analysis_fulfill_corpus,
                   events_thread, event_analysis, websites, description_tree_tagger, website_tree_tagger)
-                  """
-    event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tagger, website_tree_tagger, events)
+
+    #Monothread - event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tagger, website_tree_tagger, events)
 
     event_analysis.set_corpus_complete()
 
     # We compute the tf-idf of the key word in the description and in the website if exists
-    """
     start_threads(nb_core, event_analysis_compute_tf_idf,
                   events_thread, event_analysis, websites, description_tree_tagger, website_tree_tagger)
-                  """
-    event_analysis_compute_tf_idf(event_analysis, websites, description_tree_tagger, website_tree_tagger, events)
+
+    #Monothread - event_analysis_compute_tf_idf(event_analysis, websites, description_tree_tagger, website_tree_tagger, events)
 
     # We fetch the k most important tags by event
-    """
     job_queue = JobQueue()
     job_queue.start()
     start_threads(nb_core, event_analysis_fetch_k_most_important_features_and_push_database,
                   events_thread, job_queue, event_analysis, websites)
     job_queue.finish()
-    """
-    event_analysis_fetch_k_most_important_features_and_push_database(None, event_analysis, websites, events)
+
+    #Monothread - event_analysis_fetch_k_most_important_features_and_push_database(None, event_analysis, websites, events)
 
     compute_statistics(events, description_tree_tagger, website_tree_tagger)
 
@@ -137,13 +131,13 @@ def event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tag
     """
     Part 1 of the event analysis, that fulfill the corpus
     """
-
+    tagger = TreeTagger()
     # We complete the corpus with plain text of description & website if exists
     for e in events:
         len_description = 0
         if e.description != '' and guess_language.guessLanguage(e.description.encode('utf-8')) == LANGUAGE_FOR_TEXT_ANALYSIS:
             event_analysis.add_document_in_corpus(e.description, EventAnalysis.get_id_website(e.id, False))
-            description_tree_tagger[e.id] = TreeTagger.tag_text(e.description, FILTER_TREE_TAGGER)
+            description_tree_tagger[e.id] = tagger.tag_text(e.description, FILTER_TREE_TAGGER)
             len_description = len(description_tree_tagger[e.id])
 
         if e.website != '' and len_description < is_nb_word_website_enough(len_description):
@@ -155,7 +149,7 @@ def event_analysis_fulfill_corpus(event_analysis, websites, description_tree_tag
                     websites[e.website] += event_website_parser(w) + ' '
 
                 event_analysis.add_document_in_corpus(websites[e.website], EventAnalysis.get_id_website(e.id, True))
-                website_tree_tagger[e.id] = TreeTagger.tag_text(websites[e.website], FILTER_TREE_TAGGER)
+                website_tree_tagger[e.id] = tagger.tag_text(websites[e.website], FILTER_TREE_TAGGER)
                 #  We empty the buffer, to save memory and because we only need it afterwards the url
                 websites[e.website] = ' '
 
@@ -228,8 +222,8 @@ def event_analysis_fetch_k_most_important_features_and_push_database(job_queue, 
 
 
         # Django ORM database is not thread safe, so we have to use a job queue
-        #job_queue.put([update_database_event_tags, e, key_words])
-        update_database_event_tags(e, key_words)
+        job_queue.put([update_database_event_tags, e, key_words])
+        #Monothread - update_database_event_tags(e, key_words)
 
 
 def event_website_parser(url):
