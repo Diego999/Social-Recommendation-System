@@ -4,6 +4,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from event_analyse.tree_tagger import TreeTagger
 from app_config import *
 from events.models import Feature, FeatureUser
+from multiprocessing import cpu_count
+import threading
 
 
 def user_process(_token):
@@ -35,15 +37,26 @@ def compute_facebook_user_correlation(me, friends, graph):
     Compute the correlation between the features in the database and the feature that we can find in the
     facebook user data and his friends
     """
-    my_features = search_and_extract_key_words(me)
+    my_features = search_and_extract_key_words(me, [f.name for f in Feature.objects.all()])
     if my_features is not None and len(my_features) > 0:
         update_database_user_feature(graph, my_features, WEIGHT_FEATURE_USER_FB_DATA)
 
     friends_to_keep = []
-    for i in range(0, len(friends)):
+
+    nb_core = cpu_count()
+    nb_friends = len(friends)
+    nb_friends_thread = nb_friends/nb_core
+    friends_thread = []
+
+    for i in range(nb_core-1):
+        friends_thread.append(friends[i*nb_friends_thread:(i+1)*nb_friends_thread])
+    friends_thread.append(friends[(nb_core-1)*nb_friends_thread:])
+
+    start_threads(nb_core, start_extract_key_words, friends_thread, friends_to_keep)
+    """for i in range(0, len(friends)):
         res = search_and_extract_key_words(friends[i])
         if res is not None:
-            friends_to_keep.append((friends[i], res))
+            friends_to_keep.append((friends[i], res))"""
 
     if len(friends_to_keep) > 0:
         friends_sorted = []
@@ -60,12 +73,33 @@ def compute_facebook_user_correlation(me, friends, graph):
             update_database_user_feature(graph, f[2], min(1.0, f[0].get_average_between_post()/avg_avg))
 
 
-def search_and_extract_key_words(user):
+def start_threads(nb_core, fct, tab, *args):
+    """
+    Starts as many thread as number of cores of the machine
+    """
+    threads = []
+    for i in range(nb_core):
+        thread = threading.Thread(target=fct, args=args + (tab[i],))
+        threads.append(thread)
+        thread.start()
+
+    for t in threads:
+        t.join()
+
+
+def start_extract_key_words(friends_to_keep, friends):
+    features = [f.name for f in Feature.objects.all()]
+    for i in range(0, len(friends)):
+        res = search_and_extract_key_words(friends[i], features)
+        if res is not None:
+            friends_to_keep.append((friends[i], res))
+
+
+def search_and_extract_key_words(user, features):
     """
     Search and extract keywords from a user and compare them with the database features.
     If the intersection of both sets is None, return None otherwise return the intersection
     """
-    features = [f.name for f in Feature.objects.all()]
     f_features = []
     tagger = TreeTagger()
     for g in user.get_groups():
