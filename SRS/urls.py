@@ -15,6 +15,6 @@ urlpatterns = patterns(
     url(r'^facebook_analysis/$', 'FBGraph.views.facebook_analysis', name='facebook_analysis'),
     url(r'^list_event_feature/$', 'event_analyse.views.list_event_features', name='list_event_features'),
     url(r'^event_analysis/$', 'event_analyse.views.event_analysis', name='event_analysis'),
-    url(r'^recommendation/$', 'recommendation.views.compute_recommendation', name='compute_recommendation'),
+    url(r'^recommendation/$', 'recommendation.views.view_recommendation', name='view_recommendation'),
     url(r'^rate_event/(?P<external_id>\d+)/(?P<rating>[-]?\w+)', 'events.views.rate_event', name='rate_event')
 )
