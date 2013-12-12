@@ -30,7 +30,7 @@ def event_analysis():
     description_tree_tagger = dict()
     website_tree_tagger = dict()
 
-    events = Event.objects.all()[:50]
+    events = Event.objects.all()
 
     if len(events) == 0:
         return
