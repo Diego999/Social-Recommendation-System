@@ -30,7 +30,7 @@ def event_analysis():
     description_tree_tagger = dict()
     website_tree_tagger = dict()
 
-    events = Event.objects.all()
+    events = Event.objects.all()[:50]
 
     if len(events) == 0:
         return
@@ -279,11 +279,13 @@ def update_database_event_tags(event, key_words):
             feature = Feature.objects.get(name__exact=w) if w in feature_name else Feature(name=w)
             feature.save()
 
-            EventFeature(event=event,
-                         feature=feature,
-                         tf_idf=WEIGHT_CATEGORY,
-                         weight=weight
-                         ).save()
+            ef = None
+            if len(EventFeature.objects.filter(event=event, feature=feature)) > 0:
+                ef = EventFeature.objects.get(event=event, feature=feature)
+                ef.weight = weight
+            else:
+                ef = EventFeature(event=event, feature=feature, tf_idf=WEIGHT_CATEGORY, weight=weight)
+            ef.save()
 
 
 def get_list_event_features():
