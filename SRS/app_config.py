@@ -28,3 +28,6 @@ FILTER_TAGS_WEBSITE = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'em', 'b'
 DEFAULT_RECURSION_WEBSITE = 1  # The depth of the url extractor
 
 LANGUAGE_FOR_TEXT_ANALYSIS = 'fr' # To change this value, please refer to
+
+#Recommendation
+Pt = 0.0
