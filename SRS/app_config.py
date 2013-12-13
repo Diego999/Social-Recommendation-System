@@ -30,4 +30,4 @@ DEFAULT_RECURSION_WEBSITE = 1  # The depth of the url extractor
 LANGUAGE_FOR_TEXT_ANALYSIS = 'fr' # To change this value, please refer to
 
 #Recommendation
-Pt = 0.0
+Pt = 2
