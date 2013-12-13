@@ -120,7 +120,7 @@ def get_all_event_sorted(token):
 
     rated_events = list()
     for r in Rating.objects.filter(user=current_user):
-        rated_events.append([Event.objects.get(id=r.event.id), 'Like' if r.rating == RatingValue.LIKE else 'Dislike'])
+        rated_events.append([Event.objects.get(id=r.event.id), r.rating])
     unrated_events = Event.objects.exclude(id__in=[r[0].id for r in rated_events])
 
     return {'rated': rated_events,
@@ -131,7 +131,7 @@ def rate_event_process(external_id, rating, token):
     """
     Insert, Update or delete the event
     """
-    if int(rating) == int(RatingValue.NEUTRAL):
+    if int(rating) < 0:
         try:
             Rating.objects.get(event=Event.objects.get(external_id=external_id)).delete()
         except ObjectDoesNotExist:

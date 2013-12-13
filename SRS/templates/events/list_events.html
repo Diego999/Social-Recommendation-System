@@ -2,16 +2,23 @@
 <h2>Rated Events</h2>
 <ul>
     {% for re in rated_events %}
-        <li><b
-                {% if re.1 == 'Like' %}
+        <li>{% for rv in rating_values %}
+                {% if re.1 != rv %}
+                    <a href="/rate_event/{{ re.0.external_id }}/{{ rv }}">{{ rv }}</a>
+                {% endif %}
+            {% endfor %}
+            <a href="/rate_event/{{ re.0.external_id }}/-1">N</a>
+            <b
+                {% if re.1 > 3 %}
                     style="color:green;"
-                {% else %}
+                {% endif %}
+                {% if re.1 == 3 %}
+                    style="color:orange;"
+                {% endif %}
+                {% if re.1 < 3 %}
                     style="color:red;"
                 {% endif %}
                 >{{ re.1 }}</b>
-            <a href="/rate_event/{{ re.0.external_id }}/{{ like }}">Like</a> -
-            <a href="/rate_event/{{ re.0.external_id }}/{{ neutral }}">Neutral</a> -
-            <a href="/rate_event/{{ re.0.external_id }}/{{ dislike }}">Dislike</a>
             <span style="color:brown;">{{ re.0.category.name }}</span> : <b style="color:crimson;">{{ re.0.name }}</b> <i style="color:gray;">{{ re.0.description }}</i></li>
     {% endfor %}
 </ul>
@@ -20,9 +27,9 @@
 <ul>
     {% for re in unrated_events %}
         <li>
-            <a href="/rate_event/{{ re.external_id }}/{{ like }}">Like</a> -
-            <a href="/rate_event/{{ re.external_id }}/{{ neutral }}">Neutral</a> -
-            <a href="/rate_event/{{ re.external_id }}/{{ dislike }}">Dislike</a>
+            {% for rv in rating_values %}
+                <a href="/rate_event/{{ re.external_id }}/{{ rv }}">{{ rv }}</a>
+            {% endfor %}
             <span style="color:brown;">{{ re.category.name }}</span> : <b style="color:crimson;">{{ re.name }}</b> <i style="color:gray;">{{ re.description }}</i></li>
     {% endfor %}
 </ul>

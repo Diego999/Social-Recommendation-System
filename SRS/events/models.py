@@ -47,16 +47,19 @@ class Rating(models.Model):
     rating = models.IntegerField()
 
     def __unicode__(self):
-        return str(self.event) + '\t' + str(self.user) + '\t' + 'LIKE' if self.rating == RatingValue.LIKE else 'DISLIKE'
+        return str(self.event) + '\t' + str(self.user) + '\t' + str(self.rating)
 
 
 class RatingValue:
     """
     All the possible values that a user can attribute to an event. If it's NEUTRAL, the link is supposed to be removed
     """
-    LIKE = 1
-    NEUTRAL = 0
-    DISLIKE = -1
+    EXCELLENT = 5,
+    VERY_GOOD = 4,
+    GOOD = 3,
+    MEH = 2,
+    BAD = 1,
+    VERY_BAD = 0,
 
 
 class Feature(models.Model):

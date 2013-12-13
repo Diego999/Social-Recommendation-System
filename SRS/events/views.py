@@ -4,7 +4,7 @@ from django.http import HttpResponseRedirect
 from django.core.urlresolvers import reverse
 from models import RatingValue
 import functions
-
+import inspect
 
 def add_event(request):
     context = {
@@ -42,9 +42,8 @@ def list_events(request):
     context = {
         'rated_events': res['rated'],
         'unrated_events': res['unrated'],
-        'like': RatingValue.LIKE,
-        'neutral': RatingValue.NEUTRAL,
-        'dislike': RatingValue.DISLIKE
+        # Source http://stackoverflow.com/questions/9058305/getting-attributes-of-a-class?answertab=active#tab-top
+        'rating_values': sorted([a[1][0] for a in inspect.getmembers(RatingValue, lambda a: not(inspect.isroutine(a))) if not(a[0].startswith('__') and a[0].endswith('__'))])
     }
     return render_to_response('events/list_events.html', context)
 
