@@ -1,12 +1,12 @@
 from numpy import zeros
 
 
-class Matrix:
+class Matrix2D:
     def __init__(self, list_rows, list_cols, type, fill_val=None):
         self.rows = list_rows
-        self.rows_index = self.create_dict_index(self.rows)
+        self.rows_index = Matrix2D.create_dict_index(self.rows)
         self.cols = list_cols
-        self.cols_index = self.create_dict_index(self.cols)
+        self.cols_index = Matrix2D.create_dict_index(self.cols)
         self.matrix = zeros(shape=(len(list_rows), len(list_cols)), dtype=type)
         if fill_val is not None:
             self.matrix.fill(fill_val)
