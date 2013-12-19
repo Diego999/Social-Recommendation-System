@@ -1,3 +1,10 @@
 <a href="/manage">Back</a>
-
+{% for key, value in data.items %}
+    <h2>{{ key.name }} - {{ value.0 }}</h2>
+    <ul>
+        {% for v in value.1 %}
+            <li><b>{{ v.0 }}</b> : {{ v.1 }} <i>(<b>{{ v.3 }}</b>, {{ v.2 }})</i></li>
+        {% endfor %}
+    </ul>
+{%  endfor %}
 <a href="/manage">Back</a>

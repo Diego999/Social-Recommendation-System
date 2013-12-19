@@ -4,8 +4,6 @@ from django.shortcuts import render_to_response
 from django.core.urlresolvers import reverse
 from app_config import FACEBOOK_APP_ID, FACEBOOK_SECRET_KEY, FACEBOOK_REDIRECT_URL
 from Graph import Graph
-from events.models import FeatureUser
-from models import User
 from functions import compute_facebook_user_correlation, user_process, list_feature_user
 
 

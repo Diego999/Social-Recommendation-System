@@ -32,3 +32,5 @@ LANGUAGE_FOR_TEXT_ANALYSIS = 'fr' # To change this value, please refer to
 #Recommendation
 Pt = 2
 K_NEAREST_NEIGHBOR = 2
+WEIGHT_FEATURE_EVENT = 1.0
+WEIGHT_FEATURE_FB = 1.0

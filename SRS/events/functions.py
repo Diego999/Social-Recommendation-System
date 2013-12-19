@@ -84,6 +84,7 @@ def update_weight_database():
                  WEIGHT_WEBSITE_NAME: WEIGHT_WEBSITE_TEXT}.items():
         Weight(name=k, weight=v).save()
 
+
 def get_all_categories():
     """
     Return all the existing categories in the fetch__update_database
