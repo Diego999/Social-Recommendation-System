@@ -16,4 +16,4 @@ def get_features_event(res):
     for e in res.keys():
         out[e] = (res[e], [(ef.feature.name, ef.tf_idf*ef.weight.weight, ef.weight.weight, ef.weight.name)
                         for ef in EventFeature.objects.filter(event__exact=e).order_by('-tf_idf')])
-    return OrderedDict(sorted(out.items(), key=lambda t: t[1][0]))
+    return OrderedDict(sorted(out.items(), key=lambda t: t[1][0], reverse=True))

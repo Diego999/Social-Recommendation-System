@@ -139,7 +139,7 @@ class Recommendation:
                 elif Recommendation.compare_float(self.p[u, f], Recommendation.EMPTY_CASE):
                     self.ff[u, f] = self.p[u, f]
                 elif Recommendation.compare_float(self.s[u, f], Recommendation.EMPTY_CASE):
-                    self.ff[u, f] = self.s[u. f]
+                    self.ff[u, f] = self.s[u, f]
 
     def create_matrix_uf(self):
         for f in self.p.get_cols():
