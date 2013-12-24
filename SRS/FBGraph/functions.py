@@ -52,11 +52,9 @@ def compute_facebook_user_correlation(me, friends, graph):
         friends_thread.append(friends[i*nb_friends_thread:(i+1)*nb_friends_thread])
     friends_thread.append(friends[(nb_core-1)*nb_friends_thread:])
 
-    start_threads(nb_core, start_extract_key_words, friends_thread, friends_to_keep)
-    """for i in range(0, len(friends)):
-        res = search_and_extract_key_words(friends[i])
-        if res is not None:
-            friends_to_keep.append((friends[i], res))"""
+	start_threads(nb_core, start_extract_key_words, friends_thread, friends_to_keep)
+    
+    #MonoThread - start_extract_key_words(friends_to_keep, friends)
 
     if len(friends_to_keep) > 0:
         friends_sorted = []

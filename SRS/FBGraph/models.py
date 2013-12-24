@@ -66,6 +66,7 @@ class FBUser:
                 data = graph.fetch_user_posts_and_comments(graph.get_graph(), self.uid, m[0], m[1])
                 nb_msg = len(data[0][u'fql_result_set']) + len(data[1][u'fql_result_set'])
                 self.average_absolute_deviation_between_posts += abs((float(month_in_secs)/float(nb_msg) if nb_msg != 0 else 0) - avg)
+                time.sleep(1)
             self.average_absolute_deviation_between_posts /= float(len(months))
         return self.average_absolute_deviation_between_posts
 
