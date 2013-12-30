@@ -30,8 +30,6 @@ class TreeTagger:
     tag_in_enc = 'cp1252'
     tag_out_enc = 'cp1252'
 
-    instance = None
-
     def __init__(self):
         self.tagger = treetaggerwrapper.TreeTagger(TAGLANG=TreeTagger.tag_lang, TAGDIR=TreeTagger.tag_dir,
                                                TAGINENC=TreeTagger.tag_in_enc, TAGOUTENC=TreeTagger.tag_out_enc)

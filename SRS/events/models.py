@@ -24,7 +24,7 @@ class Event(models.Model):
     external_id = models.PositiveIntegerField()
     name = models.CharField(max_length=100)
     website = models.URLField()
-    description = models.TextField(max_length=1000)
+    description = models.TextField()
     users_have_rated = models.ManyToManyField(User, through='Rating')
     # 'Feature' because the class is declared underneath
     features = models.ManyToManyField('Feature', through='EventFeature')
@@ -57,9 +57,8 @@ class RatingValue:
     EXCELLENT = 5,
     VERY_GOOD = 4,
     GOOD = 3,
-    MEH = 2,
-    BAD = 1,
-    VERY_BAD = 0,
+    BAD = 2,
+    VERY_BAD = 1,
 
 
 class Feature(models.Model):

@@ -2,8 +2,7 @@ from events.models import Event, Feature, User, Rating, EventFeature, FeatureUse
 from app_config import *
 from matrix_2d import Matrix2D
 from matrix_1d import Matrix1D
-from numpy import log10
-from math import pow, sqrt
+from numpy import log10, sqrt
 
 
 class Recommendation:
@@ -26,10 +25,10 @@ class Recommendation:
 
         self.r = Matrix2D(users, events, int, Recommendation.EMPTY_CASE)
         self.f = Matrix2D(events, features, float, Recommendation.EMPTY_CASE)
-        self.p = Matrix2D(users, features, float, Recommendation.EMPTY_CASE)
-        self.s = Matrix2D(users, features, float, Recommendation.EMPTY_CASE)
+        self.p = Matrix2D(users, features, float, 0)
+        self.s = Matrix2D(users, features, float, 0)
 
-        self.ff = Matrix2D(users, features, float, Recommendation.EMPTY_CASE)
+        self.ff = Matrix2D(users, features, float, 0)
         self.uf = Matrix1D(features, int)
         self.iuf = Matrix1D(features, float)
 
@@ -57,7 +56,7 @@ class Recommendation:
     def compute_matrix_w(self):
         for u in self.ff.get_rows():
             for f in self.ff.get_cols():
-                self.w[u, f] = self.ff[u, f] * self.iuf[f] if not Recommendation.compare_float(self.iuf[f], Recommendation.EMPTY_CASE) else self.EMPTY_CASE
+                self.w[u, f] = self.ff[u, f] * self.iuf[f] if not Recommendation.compare_float(self.iuf[f], 0.0) and not Recommendation.compare_float(self.ff[u, f], 0.0) else self.EMPTY_CASE
 
     def compute_matrix_uu(self):
         users_u = User.objects.all()
@@ -73,15 +72,17 @@ class Recommendation:
                     for f in self.p.get_cols():
                         if not Recommendation.compare_float(self.p[u, f], 0.0) and self.p[u, f] > 0.0 and not Recommendation.compare_float(self.p[v, f], 0.0) and self.p[v, f] > 0.0:
                             x.append(f)
-                    nominator = 0.0
-                    wu2 = 0.0
-                    wv2 = 0.0
-                    for f in x:
-                        nominator += self.w[u, f]*self.w[v, f]
-                        wu2 += pow(self.w[u, f], 2)
-                        wv2 += pow(self.w[v, f], 2)
-                    denominator = sqrt(wu2)*sqrt(wv2)
-                    self.uu[u, v] = self.uu[v, u] = nominator/denominator
+                    if len(x) > 0:
+                        nominator = 0.0
+                        wu2 = 0.0
+                        wv2 = 0.0
+                        for f in x:
+                            if not Recommendation.compare_float(self.w[u, f], Recommendation.EMPTY_CASE) and not Recommendation.compare_float(self.w[v, f], Recommendation.EMPTY_CASE):
+                                nominator += self.w[u, f]*self.w[v, f]
+                                wu2 += self.w[u, f]*self.w[u, f]
+                                wv2 += self.w[v, f]*self.w[v, f]
+                        denominator = sqrt(wu2)*sqrt(wv2)
+                        self.uu[u, v] = self.uu[v, u] = nominator/denominator if not Recommendation.compare_float(denominator, 0.0) else Recommendation.EMPTY_CASE
 
     def compute_recommended_events(self, user):
         from collections import OrderedDict
@@ -91,15 +92,17 @@ class Recommendation:
                 scores[u] = self.uu[user, u]
 
         scores = OrderedDict(sorted(scores.items(), key=lambda t: t[1]))
+
         keys = scores.keys()
         k_similar_users = set()
         j = 0
-        for i in range(0, len(keys)-1):
+        for i in range(0, len(keys)):
             if j == K_NEAREST_NEIGHBOR:
                 break
             k_similar_users.add(keys[i])
-            if Recommendation.compare_float(scores[keys[i]], scores[keys[i+1]]):
-                k_similar_users.add(keys[i+1])
+            if i+1 < len(keys):
+                if Recommendation.compare_float(scores[keys[i]], scores[keys[i+1]]):
+                    k_similar_users.add(keys[i+1])
             else:
                 j += 1
 
@@ -118,10 +121,11 @@ class Recommendation:
 
         feature_frequency = {}
         for f in features_event.values():
-            if f not in feature_frequency:
-                feature_frequency[f] = 1
-            else:
-                feature_frequency[f] += 1
+            for ff in f:
+                if ff not in feature_frequency:
+                    feature_frequency[ff] = 1
+                else:
+                    feature_frequency[ff] += 1
 
         final_score_event = {}
         for e in similar_events:
@@ -129,28 +133,23 @@ class Recommendation:
             for f in features_event[e]:
                 final_score_event[e] += feature_frequency[f]
 
-        return OrderedDict(sorted(scores.items(), key=lambda t: t[1]))
+        return OrderedDict(sorted(final_score_event.items(), key=lambda t: t[1], reverse=True)[:K_MOST_RECOMMENDED_EVENTS])
 
     def create_matrix_ff(self):
         for u in self.p.get_rows():
             for f in self.p.get_cols():
-                if Recommendation.compare_float(self.p[u, f], Recommendation.EMPTY_CASE) and Recommendation.compare_float(self.s[u, f], Recommendation.EMPTY_CASE):
-                    self.ff[u, f] = WEIGHT_FEATURE_EVENT*self.p[u, f] + WEIGHT_FEATURE_FB*self.s[u, f]
-                elif Recommendation.compare_float(self.p[u, f], Recommendation.EMPTY_CASE):
-                    self.ff[u, f] = self.p[u, f]
-                elif Recommendation.compare_float(self.s[u, f], Recommendation.EMPTY_CASE):
-                    self.ff[u, f] = self.s[u, f]
+                self.ff[u, f] = WEIGHT_FEATURE_EVENT*self.p[u, f] + WEIGHT_FEATURE_FB*self.s[u, f]
 
     def create_matrix_uf(self):
         for f in self.p.get_cols():
             for u in self.p.get_rows():
-                if not Recommendation.compare_float(self.p[u, f], Recommendation.EMPTY_CASE) and self.p[u, f] > Recommendation.EPSILON:
+                if not Recommendation.compare_float(self.ff[u, f], 0.0) and self.ff[u, f] > 0.0:
                     self.uf[f] += 1
 
     def create_matrix_iuf(self):
         len_users = float(len(self.r.get_rows()))
         for f in self.uf.get_rows():
-            self.iuf[f] = log10(2*len_users/float(self.uf[f])) if self.uf[f] != 0 else Recommendation.EMPTY_CASE
+            self.iuf[f] = log10(len_users/float(self.uf[f])) if self.uf[f] != 0 else 0.0
 
     def create_matrix_r(self):
         """
