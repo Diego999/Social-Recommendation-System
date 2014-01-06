@@ -3,6 +3,15 @@
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
+TEMPLATE_DIRS = (
+    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    'C:/Users/Diego/Dropbox/Divers/HES/3eme Annee/Modules/3280 Projet P3 INF/Social Recommendation System/02-Projet/13dlm-ta216/SRS/templates',
+)
+
+SITE_ID = u'52c2bbe16f509c17002ea217'
+
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )
@@ -22,7 +31,7 @@ DATABASES = {
 
 # Hosts/domain names that are valid for this site; required if DEBUG is False
 # See https://docs.djangoproject.com/en/1.3/ref/settings/#allowed-hosts
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -37,11 +46,9 @@ TIME_ZONE = 'America/Chicago'
 # http://www.i18nguy.com/unicode/language-identifiers.html
 LANGUAGE_CODE = 'en-us'
 
-SITE_ID = u'52b2d9f76f509c1ad4034675'
-
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
-USE_I18N = True
+USE_I18N = False
 
 # If you set this to False, Django will not format dates, numbers and
 # calendars according to the current locale
@@ -103,13 +110,6 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'SRS.urls'
-
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    'C:/Users/Diego/Dropbox/Divers/HES/3eme Annee/Modules/3280 Projet P3 INF/Social Recommendation System/02-Projet/13dlm-ta216/SRS/templates',
-)
 
 INSTALLED_APPS = (
     'django.contrib.auth',

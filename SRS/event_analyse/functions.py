@@ -106,11 +106,18 @@ def compute_statistics(events, description_tree_tagger, website_tree_tagger):
             nb_website_with_keyword += 1
     nb_website_fr = float(nb_website_with_keyword)/float(nb_events_with_valid_website)
 
+    nb_event_website_fr = 0
+    for k, v in description_tree_tagger.items():
+        if len(v) > 0 and k in website_tree_tagger.keys():
+            if len(website_tree_tagger[k]) > 0:
+                nb_event_website_fr += 1
+
     print 'Number of events : ', nb_event
     print 'Average number of keywords in description : ', avg_nb_keyword_description
     print 'Average number of keywords in description + website (rec :', DEFAULT_RECURSION_WEBSITE, ') : ', avg_nb_keyword_description_website
     print '% descriptions in french : ', nb_description_fr*100.0, ' %'
-    print '% websites in french when the description is in french too : ', nb_website_fr*100.0, ' %'
+    print '% websites have some French content : ', nb_website_fr*100.0, ' %'
+    print '% events with French description & website : ', nb_event_website_fr*100.0/nb_event, ' %'
 
 
 def start_threads(nb_core, fct, tab, *args):
