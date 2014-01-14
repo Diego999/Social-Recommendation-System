@@ -37,6 +37,13 @@ def compute_facebook_user_correlation(me, friends, graph):
     Compute the correlation between the features in the database and the feature that we can find in the
     facebook user data and his friends
     """
+    try:
+        for f in FeatureUser.objects.filter(user=User.objects.get(external_id=graph.get_me()['id'])):
+            f.delete()
+    except ObjectDoesNotExist:
+        #  The value doesn't exist, so it's already deleted
+        pass
+	
     my_features = search_and_extract_key_words(me, [f.name for f in Feature.objects.all()])
     if my_features is not None and len(my_features) > 0:
         update_database_user_feature(graph, my_features, WEIGHT_FEATURE_USER_FB_DATA)
@@ -52,22 +59,23 @@ def compute_facebook_user_correlation(me, friends, graph):
         friends_thread.append(friends[i*nb_friends_thread:(i+1)*nb_friends_thread])
     friends_thread.append(friends[(nb_core-1)*nb_friends_thread:])
 
-    start_threads(nb_core, start_extract_key_words, friends_thread, friends_to_keep)
+    start_threads(nb_core, start_extract_key_words, friends_thread, friends_to_keep) 
     #MonoThread - start_extract_key_words(friends_to_keep, friends)
-
+	
     if len(friends_to_keep) > 0:
         friends_sorted = []
         for i in range(0, len(friends_to_keep)):
             friends_sorted.append((friends_to_keep[i][0], friends_to_keep[i][0].get_average_absolute_deviation(graph), friends_to_keep[i][1]))
         friends_sorted = sorted(friends_sorted, key=lambda x: x[1])[:K_MOST_ACTIVE_FB_USER]
 
-        avg_avg = 0.0
+        max = -1
         for f in friends_sorted:
-            avg_avg += f[0].get_average_between_post()
-        avg_avg /= float(len(friends_sorted))
+            res = f[0].get_average_between_post()
+            if res > max:
+                max = res
 
         for f in friends_sorted:
-            update_database_user_feature(graph, f[2], min(1.0, f[0].get_average_between_post()/avg_avg))
+            update_database_user_feature(graph, f[2], f[0].get_average_between_post()/max)
 
 
 def start_threads(nb_core, fct, tab, *args):
@@ -132,23 +140,23 @@ def extract_key_words(tagger, texts):
 def update_database_user_feature(graph, features, w):
     """
     Insert into the database the features and their weight, related of the user
-    """
+    """ 
     u = User.objects.get(external_id=graph.get_me()['id'])
-    try:
-        for f in FeatureUser.objects.filter(user=u):
-            f.delete()
-    except ObjectDoesNotExist:
-        #  The value doesn't exist, so it's already deleted
-        pass
-
     for f in features:
-        FeatureUser(user=u, weight=w, feature=Feature.objects.get(name__exact=f)).save()
+        fea = Feature.objects.get(name__exact=f)
+        fu = FeatureUser.objects.filter(user=u, feature=fea)
+        if len(fu) > 0:
+            fu = fu[0]
+            fu.weight = w if w > fu.weight else fu.weight
+        else:
+            fu = FeatureUser(user=u, weight=w, feature=fea)
+        fu.save()
 
 
 def list_feature_user(graph):
     out = []
     try:
-        for fu in FeatureUser.objects.filter(user=User.objects.get(external_id=graph.get_me()['id'])):
+        for fu in FeatureUser.objects.filter(user=User.objects.get(external_id=graph.get_me()['id'])).order_by('-weight'):
             out.append((fu.feature.name, fu.weight))
     except:
         pass
