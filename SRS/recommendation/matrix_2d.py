@@ -2,6 +2,9 @@ from numpy import zeros
 
 
 class Matrix2D:
+    """
+    Matrix 2D with the index with objects
+    """
     def __init__(self, list_rows, list_cols, type, fill_val=None):
         self.rows = list_rows
         self.rows_index = Matrix2D.create_dict_index(self.rows)

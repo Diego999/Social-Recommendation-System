@@ -13,6 +13,9 @@ from django.core.validators import URLValidator
 
 
 def is_nb_word_website_enough(x):
+    """
+    Return the number of words to take from the website
+    """
     return K_MOST_IMPORTANT_KEYWORD
 
 

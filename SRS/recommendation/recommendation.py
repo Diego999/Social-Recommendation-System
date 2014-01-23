@@ -45,20 +45,32 @@ class Recommendation:
         self.create_matrix_p()
 
     def init_frequency_matrix(self):
+        """
+        Create the FF, UF, IUF matrix
+        """
         self.create_matrix_ff()
         self.create_matrix_uf()
         self.create_matrix_iuf()
 
     def compute_matrix(self):
+        """
+        Compute the matrix W and UU
+        """
         self.compute_matrix_w()
         self.compute_matrix_uu()
 
     def compute_matrix_w(self):
+        """
+        Compute the Weighted matrix
+        """
         for u in self.ff.get_rows():
             for f in self.ff.get_cols():
                 self.w[u, f] = self.ff[u, f] * self.iuf[f] if not Recommendation.compare_float(self.iuf[f], 0.0) and not Recommendation.compare_float(self.ff[u, f], 0.0) else self.EMPTY_CASE
 
     def compute_matrix_uu(self):
+        """
+        Compute the User-User matrix
+        """
         users_u = User.objects.all()
         # It's a symmetric matrix, we don't need to go through all values
         for uu in range(0, len(users_u)):
@@ -85,6 +97,9 @@ class Recommendation:
                         self.uu[u, v] = self.uu[v, u] = nominator/denominator if not Recommendation.compare_float(denominator, 0.0) else Recommendation.EMPTY_CASE
 
     def compute_recommended_events(self, user):
+        """
+        Compute the recommendation with the others matrix computed before
+        """
         from collections import OrderedDict
         scores = {}
         for u in self.uu.get_cols():
@@ -136,17 +151,26 @@ class Recommendation:
         return OrderedDict(sorted(final_score_event.items(), key=lambda t: t[1], reverse=True)[:K_MOST_RECOMMENDED_EVENTS])
 
     def create_matrix_ff(self):
+        """
+        Create the Feature Frequency matrix
+        """
         for u in self.p.get_rows():
             for f in self.p.get_cols():
                 self.ff[u, f] = WEIGHT_FEATURE_EVENT*self.p[u, f] + WEIGHT_FEATURE_FB*self.s[u, f]
 
     def create_matrix_uf(self):
+        """
+        Create the User Frequency matrix
+        """
         for f in self.p.get_cols():
             for u in self.p.get_rows():
                 if not Recommendation.compare_float(self.ff[u, f], 0.0) and self.ff[u, f] > 0.0:
                     self.uf[f] += 1
 
     def create_matrix_iuf(self):
+        """
+        Create the Inverse User Frequency matrix
+        """
         len_users = float(len(self.r.get_rows()))
         for f in self.uf.get_rows():
             self.iuf[f] = log10(len_users/float(self.uf[f])) if self.uf[f] != 0 else 0.0
@@ -177,6 +201,9 @@ class Recommendation:
                             self.p[u, f] += self.f[i, f]
 
     def create_matrix_s(self):
+        """
+        Create the social matrix
+        """
         for fu in FeatureUser.objects.all():
             self.s[fu.user, fu.feature] = fu.weight
 
