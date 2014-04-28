@@ -97,3 +97,8 @@ python manage.py runserver
 
 
 Now start you favorite browser and go to 127.0.0.1:8000 and enjoy it !
+
+
+h2. License
+
+This code is distributed under the terms and conditions of the MIT license.
